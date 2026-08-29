@@ -1,0 +1,226 @@
+<mxfile host="app.diagrams.net" modified="2026-08-29T00:00:00.000Z" agent="Codex" version="26.0.16" type="device">
+  <diagram id="darkstore-user-journey" name="Implementation User Journey">
+    <mxGraphModel dx="2048" dy="1024" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2100" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <mxCell id="title" value="Dark-store fashion discovery — implementation user journey" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontStyle=1;fontSize=22;fontColor=#0F172A;" vertex="1" parent="1">
+          <mxGeometry x="40" y="12" width="1900" height="30" as="geometry"/>
+        </mxCell>
+        <mxCell id="subtitle" value="Three locally deliverable looks first; conversation recovers intent without inventing retail facts." style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=12;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="40" y="42" width="1900" height="22" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="laneShopper" value="" style="swimlane;html=1;horizontal=1;startSize=28;rounded=0;fillColor=#F8FAFC;swimlaneFillColor=#DCEBFF;strokeColor=#94A3B8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="75" width="1940" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="laneUi" value="" style="swimlane;html=1;horizontal=1;startSize=28;rounded=0;fillColor=#F8FAFC;swimlaneFillColor=#DDF3E4;strokeColor=#94A3B8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="220" width="1940" height="140" as="geometry"/>
+        </mxCell>
+        <mxCell id="laneAi" value="" style="swimlane;html=1;horizontal=1;startSize=28;rounded=0;fillColor=#F8FAFC;swimlaneFillColor=#EEE2F7;strokeColor=#94A3B8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="375" width="1940" height="130" as="geometry"/>
+        </mxCell>
+        <mxCell id="laneRetail" value="" style="swimlane;html=1;horizontal=1;startSize=28;rounded=0;fillColor=#F8FAFC;swimlaneFillColor=#FFEBD2;strokeColor=#94A3B8;" vertex="1" parent="1">
+          <mxGeometry x="40" y="520" width="1940" height="230" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="laneShopperLabel" value="SHOPPER" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontStyle=1;fontSize=13;fontColor=#0F172A;" vertex="1" parent="1">
+          <mxGeometry x="58" y="80" width="260" height="22" as="geometry"/>
+        </mxCell>
+        <mxCell id="laneUiLabel" value="TAURI DESKTOP UI" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontStyle=1;fontSize=13;fontColor=#0F172A;" vertex="1" parent="1">
+          <mxGeometry x="58" y="225" width="260" height="22" as="geometry"/>
+        </mxCell>
+        <mxCell id="laneAiLabel" value="AI INTENT SERVICE" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontStyle=1;fontSize=13;fontColor=#0F172A;" vertex="1" parent="1">
+          <mxGeometry x="58" y="380" width="260" height="22" as="geometry"/>
+        </mxCell>
+        <mxCell id="laneRetailLabel" value="RETAIL RECOMMENDATION CORE" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontStyle=1;fontSize=13;fontColor=#0F172A;" vertex="1" parent="1">
+          <mxGeometry x="58" y="525" width="300" height="22" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="shopOpen" value="" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;labelPosition=center;verticalLabelPosition=middle;spacing=6;fillColor=#E8F1FF;strokeColor=#5B8DEF;fontColor=#172554;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="85" y="123" width="135" height="48" as="geometry"/>
+        </mxCell>
+        <mxCell id="uiLanding" value="" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;labelPosition=center;verticalLabelPosition=middle;spacing=6;fillColor=#E8F5E9;strokeColor=#66A96F;fontColor=#14532D;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="255" y="266" width="150" height="54" as="geometry"/>
+        </mxCell>
+        <mxCell id="retailSnapshot" value="" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;labelPosition=center;verticalLabelPosition=middle;spacing=6;fillColor=#FFF3E0;strokeColor=#D98A38;fontColor=#7C2D12;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="430" y="563" width="180" height="64" as="geometry"/>
+        </mxCell>
+        <mxCell id="retailInitialRank" value="" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;labelPosition=center;verticalLabelPosition=middle;spacing=6;fillColor=#FFF3E0;strokeColor=#D98A38;fontColor=#7C2D12;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="645" y="568" width="180" height="54" as="geometry"/>
+        </mxCell>
+        <mxCell id="uiInitialCards" value="" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;labelPosition=center;verticalLabelPosition=middle;spacing=6;fillColor=#E8F5E9;strokeColor=#66A96F;fontColor=#14532D;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="855" y="260" width="190" height="66" as="geometry"/>
+        </mxCell>
+        <mxCell id="shopBrowse" value="" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;labelPosition=center;verticalLabelPosition=middle;spacing=6;fillColor=#E8F1FF;strokeColor=#5B8DEF;fontColor=#172554;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1080" y="120" width="160" height="54" as="geometry"/>
+        </mxCell>
+        <mxCell id="shopDecision" value="" style="rhombus;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;labelPosition=center;verticalLabelPosition=middle;spacing=6;fillColor=#FFF7D6;strokeColor=#C79400;fontColor=#713F12;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1280" y="112" width="78" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="shopAddBag" value="" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;labelPosition=center;verticalLabelPosition=middle;spacing=6;fillColor=#E8F1FF;strokeColor=#5B8DEF;fontColor=#172554;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1395" y="115" width="180" height="64" as="geometry"/>
+        </mxCell>
+        <mxCell id="uiPrompt" value="" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;labelPosition=center;verticalLabelPosition=middle;spacing=6;fillColor=#E8F5E9;strokeColor=#66A96F;fontColor=#14532D;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1195" y="267" width="205" height="54" as="geometry"/>
+        </mxCell>
+        <mxCell id="aiIntent" value="" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;labelPosition=center;verticalLabelPosition=middle;spacing=6;fillColor=#F3E5F5;strokeColor=#9A66B3;fontColor=#581C87;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1435" y="415" width="180" height="58" as="geometry"/>
+        </mxCell>
+        <mxCell id="uiClarify" value="" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;labelPosition=center;verticalLabelPosition=middle;spacing=6;fillColor=#FFF7D6;strokeColor=#C79400;fontColor=#713F12;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1645" y="262" width="205" height="64" as="geometry"/>
+        </mxCell>
+        <mxCell id="retailValidate" value="" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;labelPosition=center;verticalLabelPosition=middle;spacing=6;fillColor=#FFF3E0;strokeColor=#D98A38;fontColor=#7C2D12;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1430" y="555" width="195" height="66" as="geometry"/>
+        </mxCell>
+        <mxCell id="retailEligible" value="" style="rhombus;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;labelPosition=center;verticalLabelPosition=middle;spacing=6;fillColor=#FFF7D6;strokeColor=#C79400;fontColor=#713F12;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1680" y="552" width="84" height="78" as="geometry"/>
+        </mxCell>
+        <mxCell id="uiRefreshed" value="" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;labelPosition=center;verticalLabelPosition=middle;spacing=6;fillColor=#E8F5E9;strokeColor=#66A96F;fontColor=#14532D;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1800" y="257" width="145" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="shopChooseRefreshed" value="" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;labelPosition=center;verticalLabelPosition=middle;spacing=6;fillColor=#E8F1FF;strokeColor=#5B8DEF;fontColor=#172554;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1715" y="115" width="210" height="58" as="geometry"/>
+        </mxCell>
+        <mxCell id="uiRecovery" value="" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;labelPosition=center;verticalLabelPosition=middle;spacing=6;fillColor=#FEE2E2;strokeColor=#D14343;fontColor=#7F1D1D;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="1795" y="397" width="160" height="70" as="geometry"/>
+        </mxCell>
+        <mxCell id="retailTrace" value="" style="rounded=1;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;labelPosition=center;verticalLabelPosition=middle;spacing=6;fillColor=#FFFFFF;strokeColor=#64748B;fontColor=#334155;fontSize=11;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="1000" y="670" width="240" height="50" as="geometry"/>
+        </mxCell>
+        <mxCell id="trustBoundary" value="" style="shape=note;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;labelPosition=center;verticalLabelPosition=middle;spacing=6;fillColor=#FEE2E2;strokeColor=#D14343;fontColor=#7F1D1D;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="85" y="670" width="390" height="52" as="geometry"/>
+        </mxCell>
+        <mxCell id="legend" value="Solid = journey flow   ·   Dashed = auditable trace   ·   Yellow = conditional decision / question" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=11;fontColor=#475569;" vertex="1" parent="1">
+          <mxGeometry x="500" y="680" width="450" height="25" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="shopOpenText" value="1. Open app" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;overflow=hidden;fontSize=12;fontColor=#172554;" vertex="1" parent="1">
+          <mxGeometry x="90" y="130" width="125" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="uiLandingText" value="2. Prepare landing state" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;overflow=hidden;fontSize=12;fontColor=#14532D;" vertex="1" parent="1">
+          <mxGeometry x="262" y="276" width="136" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="retailSnapshotText" value="Read shopper context +&lt;br&gt;timestamped inventory snapshot" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;overflow=hidden;fontSize=11;fontColor=#7C2D12;" vertex="1" parent="1">
+          <mxGeometry x="438" y="574" width="164" height="42" as="geometry"/>
+        </mxCell>
+        <mxCell id="retailInitialRankText" value="Filter and rank three&lt;br&gt;eligible looks" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;overflow=hidden;fontSize=11;fontColor=#7C2D12;" vertex="1" parent="1">
+          <mxGeometry x="653" y="578" width="164" height="34" as="geometry"/>
+        </mxCell>
+        <mxCell id="uiInitialCardsText" value="3. Show three shoppable looks&lt;br&gt;Price • size • delivery • why shown" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;overflow=hidden;fontSize=11;fontColor=#14532D;" vertex="1" parent="1">
+          <mxGeometry x="863" y="270" width="174" height="46" as="geometry"/>
+        </mxCell>
+        <mxCell id="shopBrowseText" value="4. Browse and&lt;br&gt;compare looks" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;overflow=hidden;fontSize=12;fontColor=#172554;" vertex="1" parent="1">
+          <mxGeometry x="1088" y="129" width="144" height="36" as="geometry"/>
+        </mxCell>
+        <mxCell id="shopDecisionText" value="Like a&lt;br&gt;look?" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;overflow=hidden;fontSize=11;fontColor=#713F12;" vertex="1" parent="1">
+          <mxGeometry x="1285" y="126" width="68" height="42" as="geometry"/>
+        </mxCell>
+        <mxCell id="shopAddBagText" value="View look → choose size&lt;br&gt;→ add to bag" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;overflow=hidden;fontSize=11;fontColor=#172554;" vertex="1" parent="1">
+          <mxGeometry x="1403" y="127" width="164" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="uiPromptText" value="5. “Looking for something else”&lt;br&gt;Free-text need + refinement chips" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;overflow=hidden;fontSize=11;fontColor=#14532D;" vertex="1" parent="1">
+          <mxGeometry x="1203" y="276" width="189" height="36" as="geometry"/>
+        </mxCell>
+        <mxCell id="aiIntentText" value="6. Structured intent only&lt;br&gt;occasion • budget • style • size" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;overflow=hidden;fontSize=11;fontColor=#581C87;" vertex="1" parent="1">
+          <mxGeometry x="1443" y="426" width="164" height="36" as="geometry"/>
+        </mxCell>
+        <mxCell id="uiClarifyText" value="Ask one high-information clarification&lt;br&gt;only when it changes the viable set" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;overflow=hidden;fontSize=10;fontColor=#713F12;" vertex="1" parent="1">
+          <mxGeometry x="1653" y="276" width="189" height="38" as="geometry"/>
+        </mxCell>
+        <mxCell id="retailValidateText" value="7. Validate inventory, price, size, and delivery; then rank" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;overflow=hidden;fontSize=11;fontColor=#7C2D12;" vertex="1" parent="1">
+          <mxGeometry x="1438" y="568" width="179" height="40" as="geometry"/>
+        </mxCell>
+        <mxCell id="retailEligibleText" value="Eligible&lt;br&gt;look exists?" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;overflow=hidden;fontSize=10;fontColor=#713F12;" vertex="1" parent="1">
+          <mxGeometry x="1688" y="572" width="68" height="38" as="geometry"/>
+        </mxCell>
+        <mxCell id="uiRefreshedText" value="8. Show refreshed&lt;br&gt;three eligible looks" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;overflow=hidden;fontSize=10;fontColor=#14532D;" vertex="1" parent="1">
+          <mxGeometry x="1808" y="273" width="129" height="38" as="geometry"/>
+        </mxCell>
+        <mxCell id="shopChooseRefreshedText" value="Compare, choose size,&lt;br&gt;add to bag" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;overflow=hidden;fontSize=11;fontColor=#172554;" vertex="1" parent="1">
+          <mxGeometry x="1723" y="127" width="194" height="36" as="geometry"/>
+        </mxCell>
+        <mxCell id="uiRecoveryText" value="No eligible look&lt;br&gt;Relax one constraint or show&lt;br&gt;closest deliverable alternative" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;overflow=hidden;fontSize=10;fontColor=#7F1D1D;" vertex="1" parent="1">
+          <mxGeometry x="1803" y="410" width="144" height="44" as="geometry"/>
+        </mxCell>
+        <mxCell id="retailTraceText" value="Decision / event trace&lt;br&gt;why shown • why excluded • shopper action" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;overflow=hidden;fontSize=10;fontColor=#334155;" vertex="1" parent="1">
+          <mxGeometry x="1008" y="679" width="224" height="32" as="geometry"/>
+        </mxCell>
+        <mxCell id="trustBoundaryText" value="Trust boundary: LLM never asserts stock, price, size, or delivery facts.&lt;br&gt;Retail core validates every card-visible claim." style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;overflow=hidden;fontSize=10;fontColor=#7F1D1D;" vertex="1" parent="1">
+          <mxGeometry x="93" y="680" width="374" height="34" as="geometry"/>
+        </mxCell>
+
+        <mxCell id="edgeOpenLanding" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#475569;" edge="1" parent="1" source="shopOpen" target="uiLanding">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edgeLandingSnapshot" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#475569;" edge="1" parent="1" source="uiLanding" target="retailSnapshot">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edgeSnapshotRank" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#475569;" edge="1" parent="1" source="retailSnapshot" target="retailInitialRank">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edgeRankCards" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#475569;" edge="1" parent="1" source="retailInitialRank" target="uiInitialCards">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edgeCardsBrowse" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#475569;" edge="1" parent="1" source="uiInitialCards" target="shopBrowse">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edgeBrowseDecision" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#475569;" edge="1" parent="1" source="shopBrowse" target="shopDecision">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edgeDecisionBag" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#475569;fontSize=10;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="shopDecision" target="shopAddBag">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edgeDecisionPrompt" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#475569;fontSize=10;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="shopDecision" target="uiPrompt">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edgePromptIntent" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#475569;" edge="1" parent="1" source="uiPrompt" target="aiIntent">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edgeIntentValidate" value="Sufficient constraints" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#475569;fontSize=10;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="aiIntent" target="retailValidate">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edgeIntentClarify" value="Missing high-value fact" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#C79400;fontSize=10;labelBackgroundColor=#FFFFFF;dashed=1;" edge="1" parent="1" source="aiIntent" target="uiClarify">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edgeClarifyIntent" value="Shopper answer" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#C79400;fontSize=10;labelBackgroundColor=#FFFFFF;dashed=1;" edge="1" parent="1" source="uiClarify" target="aiIntent">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1735" y="490"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edgeValidateEligible" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#475569;" edge="1" parent="1" source="retailValidate" target="retailEligible">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edgeEligibleRefreshed" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#475569;fontSize=10;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="retailEligible" target="uiRefreshed">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edgeRefreshedChoose" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#475569;" edge="1" parent="1" source="uiRefreshed" target="shopChooseRefreshed">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edgeEligibleRecovery" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#D14343;fontSize=10;labelBackgroundColor=#FFFFFF;" edge="1" parent="1" source="retailEligible" target="uiRecovery">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edgeRecoveryPrompt" value="Adjust one constraint" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#D14343;fontSize=10;labelBackgroundColor=#FFFFFF;dashed=1;" edge="1" parent="1" source="uiRecovery" target="uiPrompt">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1730" y="345"/>
+              <mxPoint x="1500" y="345"/>
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="edgeBagTrace" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#64748B;dashed=1;" edge="1" parent="1" source="shopAddBag" target="retailTrace">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edgeRankTrace" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#64748B;dashed=1;" edge="1" parent="1" source="retailInitialRank" target="retailTrace">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+        <mxCell id="edgeValidateTrace" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#64748B;dashed=1;" edge="1" parent="1" source="retailValidate" target="retailTrace">
+          <mxGeometry relative="1" as="geometry"/>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
