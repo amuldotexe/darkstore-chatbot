@@ -40,7 +40,7 @@ Define one source-verified, four-word-named Draw.io and PNG pair for each git-re
 - existing-diagram-relocation: passing - Three Draw.io and PNG pairs moved under docs/diagrams with four-word names.
 
 #### Implementation Progress:
-- docs/diagrams/darkstore-fashion-first-look-v01..v03: diagram pairs consolidated and renamed.
+- docs/diagrams/archive/user-journeys/darkstore-fashion-first-look-v01..v03: historical diagram pairs consolidated, renamed, and later archived when the v001 PRD journey superseded them.
 - docs/plans/D04-2026-08-29-user-journey-drawio-plan.md: source path references updated.
 
 #### Current Focus:

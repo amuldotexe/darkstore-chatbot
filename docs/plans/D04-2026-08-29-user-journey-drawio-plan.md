@@ -4,6 +4,8 @@
 
 **Goal:** Create an editable diagrams.net journey showing the dark-store fashion discovery, refinement, and recovery flows for product engineers.
 
+**Status:** Superseded. Its completed artifact is retained at `docs/diagrams/archive/user-journeys/darkstore-fashion-first-look-v01.drawio`; the v001 PRD source of truth is `docs/diagrams/darkstore-propensity-cart-journey-v001.drawio`.
+
 **Architecture:** One diagrams.net page uses swimlanes for Shopper, Tauri desktop UI, AI intent service, and Retail recommendation core. Numbered action nodes establish the walkthrough order; decision nodes and tinted notes make the availability/trust boundary and recovery path explicit.
 
 **Tech Stack:** diagrams.net XML (`mxfile` / `mxGraphModel`), XML validation with `xmllint`, semantic validation with Python standard-library XML parsing.
@@ -13,20 +15,20 @@
 ### Task 1: Create the editable swimlane diagram
 
 **Files:**
-- Create: `docs/diagrams/darkstore-fashion-first-look-v01.drawio`
+- Archived source: `docs/diagrams/archive/user-journeys/darkstore-fashion-first-look-v01.drawio`
 - Reference: `docs/D01-problem-statement.md`
 - Reference: `docs/D02-conversational-fashion-precedents.md`
 - Reference: `docs/plans/D03-2026-08-29-user-journey-design.md`
 
-**Step 1: Verify the artifact is absent before creation**
+**Step 1: Verify the archived historical artifact**
 
 Run:
 
 ```bash
-test ! -e docs/diagrams/darkstore-fashion-first-look-v01.drawio
+test -e docs/diagrams/archive/user-journeys/darkstore-fashion-first-look-v01.drawio
 ```
 
-Expected: exit code `0` before the file is added.
+Expected: exit code `0`; the historical artifact is retained only for reference.
 
 **Step 2: Add the diagrams.net XML artifact**
 
@@ -47,7 +49,7 @@ Use standard `mxGraphModel` geometry, `swimlane` styles, and individually editab
 Run:
 
 ```bash
-xmllint --noout docs/diagrams/darkstore-fashion-first-look-v01.drawio
+xmllint --noout docs/diagrams/archive/user-journeys/darkstore-fashion-first-look-v01.drawio
 ```
 
 Expected: exit code `0` and no output.
@@ -55,7 +57,7 @@ Expected: exit code `0` and no output.
 ### Task 2: Validate the implementation contract is present in the diagram
 
 **Files:**
-- Test: `docs/diagrams/darkstore-fashion-first-look-v01.drawio`
+- Archived test target: `docs/diagrams/archive/user-journeys/darkstore-fashion-first-look-v01.drawio`
 
 **Step 1: Run a semantic-label check**
 
@@ -66,7 +68,7 @@ python3 - <<'PY'
 from pathlib import Path
 from xml.etree import ElementTree
 
-diagram_path = Path("docs/diagrams/darkstore-fashion-first-look-v01.drawio")
+diagram_path = Path("docs/diagrams/archive/user-journeys/darkstore-fashion-first-look-v01.drawio")
 root = ElementTree.parse(diagram_path).getroot()
 labels = "\n".join(
     cell.attrib.get("value", "")
@@ -96,7 +98,7 @@ Expected: `Diagram labels cover the approved journey contract.`
 
 **Step 2: Visually inspect editability in diagrams.net**
 
-Open `docs/diagrams/darkstore-fashion-first-look-v01.drawio` in diagrams.net and confirm that the swimlanes, nodes, and edges are independently selectable and that the recovery branch is visible without scrolling horizontally past the canvas bounds.
+Open `docs/diagrams/archive/user-journeys/darkstore-fashion-first-look-v01.drawio` in diagrams.net and confirm that the swimlanes, nodes, and edges are independently selectable and that the recovery branch is visible without scrolling horizontally past the canvas bounds. This historical plan is superseded by `docs/diagrams/darkstore-propensity-cart-journey-v001.drawio`.
 
 **Step 3: Check repository state**
 
