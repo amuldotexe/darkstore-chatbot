@@ -2,7 +2,7 @@
 
 - Task: Guided cart journey v001 source-of-truth PRD
 - Created: 2026-08-30 10:22:55Z
-- Updated: 2026-08-30 10:50:48Z
+- Updated: 2026-08-30 11:16:05Z
 - Current Phase: Refactor
 - Status: Verified source-of-truth PRD; ready for implementation planning.
 
@@ -45,7 +45,7 @@ Create the approved v001 source-of-truth journey for propensity selection, chat 
 #### Implementation Progress:
 - docs/diagrams/darkstore-propensity-cart-journey-v001.drawio: authored the v001 PRD source with four journey lanes and visible acceptance requirements.
 - docs/diagrams/archive/user-journeys: retained v01-v03 first-look source/PNG pairs as historical journeys.
-- docs/plans/D04-2026-08-29-user-journey-drawio-plan.md: marked the prior plan superseded and linked it to the archive and v001 source of truth.
+- docs/archive/prd-executable-specs/D04-2026-08-29-user-journey-drawio-plan.md: retained the prior, superseded implementation plan for historical context.
 
 #### Current Focus:
 Render and visually validate the v001 PRD journey after its requirement contract passes.
@@ -182,3 +182,78 @@ Completed visual QA for the vertical v001 source-of-truth PRD.
 
 #### Performance/Metrics:
 - Visual defects remaining in inspected flow connectors: 0.
+
+### Session: 2026-08-30 11:09:34Z
+
+#### Current Phase: Red
+
+#### Tests Written:
+- journey-prd-explicit-selection-handoffs: failing - Search and alternative selections do not yet connect back to the product-anchored chat state.
+- journey-prd-complete-recovery-loops: failing - Key retry, post-cart routes, pagination, and stock-unavailable recovery are absent or textual only.
+- journey-prd-contextual-ranking-inputs: failing - The first-look ranking does not visibly receive the seeded shopper and trend context required by D01.
+
+#### Implementation Progress:
+- The latest visual PRD has a valid happy path but leaves recovery and state-transfer semantics implicit in card text.
+
+#### Current Focus:
+Make v001 state handoffs and recovery routes explicit without reintroducing connector overlap.
+
+#### Next Steps:
+- Add compact state handoffs, final variant and availability checks, and recovery contracts to the Draw.io source.
+- Export and inspect the new PNG at original resolution for readability and connector collisions.
+
+#### Context Notes:
+- User explicitly approved implementing the rubber-duck critique in both source and PNG; preserve the one-page vertical format.
+
+#### Performance/Metrics:
+- Missing explicit transitions identified by audit: 7.
+
+### Session: 2026-08-30 11:13:48Z
+
+#### Current Phase: Green
+
+#### Tests Written:
+- journey-prd-explicit-selection-handoffs: passing - Search and alternative-card selections explicitly re-anchor the selected-product chat state.
+- journey-prd-complete-recovery-loops: passing - Key retry, stock-unavailable recovery, post-cart continuation, and two next-three refresh loops are explicit.
+- journey-prd-contextual-ranking-inputs: passing - A seeded persona, trend and candidate-ID context explicitly informs first-look ranking.
+
+#### Implementation Progress:
+- Added a variant-confirmation and live availability gate before cart, a cart continuation contract, and controlled loop connectors held in empty branch gutters.
+
+#### Current Focus:
+Render and inspect the revised source-of-truth PRD with its explicit state handoffs.
+
+#### Next Steps:
+- Export the revised Draw.io source to PNG through diagrams.net.
+- Inspect original-resolution PNG for readability, arrow collisions and overly dense text.
+
+#### Context Notes:
+- Only four manual route point arrays are intentional: retry, two pager refreshes and alternative reselection; all are contained in whitespace.
+
+#### Performance/Metrics:
+- Explicit state-transition coverage: 9 required transitions present.
+
+### Session: 2026-08-30 11:16:05Z
+
+#### Current Phase: Refactor
+
+#### Tests Written:
+- journey-prd-explicit-selection-handoffs: passing - Initial, search and alternative selections all preserve a selected product ID and re-anchor Step 4 chat.
+- journey-prd-complete-recovery-loops: passing - Validation retry, latest-stock recovery, post-cart continuation and both pagers have explicit contracts.
+- journey-prd-contextual-ranking-inputs: passing - Seeded shopper persona, trend snapshot and catalog candidate IDs visibly inform the first three.
+- journey-prd-extended-render: passing - Rendered 1502x2328 PNG inspected at original resolution; all four manual loops sit in whitespace and no line crosses a card or heading.
+
+#### Implementation Progress:
+- Hardened empty/no-match and exhausted-pager states while retaining the one-page vertical composition.
+
+#### Current Focus:
+Completed v001 state-handoff and recovery-path visual QA.
+
+#### Next Steps:
+- Use the revised draw.io diagram as the v001 visual PRD for implementation planning.
+
+#### Context Notes:
+- The only manual routing remains the four deliberately isolated local loops: API-key retry, search pager, alternative reselection and alternative pager.
+
+#### Performance/Metrics:
+- Visual overlap defects in inspected revision: 0; explicit state transitions: 9; empty-state safeguards: 3.

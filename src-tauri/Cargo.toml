@@ -1,0 +1,28 @@
+[package]
+name = "darkstore-concierge"
+version = "0.1.0"
+description = "A grounded dark-store fashion concierge"
+authors = ["Darkstore Concierge"]
+edition = "2024"
+
+[lib]
+name = "darkstore_concierge"
+crate-type = ["lib", "cdylib", "staticlib"]
+
+[[bin]]
+name = "darkstore-concierge"
+path = "src/main.rs"
+test = false
+
+[build-dependencies]
+tauri-build = { version = "2.6.3", features = [] }
+
+[dependencies]
+async-trait = "0.1"
+libsql = { version = "0.10.0-pre.4", default-features = false, features = ["remote"] }
+reqwest = { version = "0.13.4", default-features = false, features = ["json", "rustls"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tauri = { version = "2.11.5", features = [] }
+thiserror = "2.0"
+tokio = { version = "1.48", features = ["macros", "rt-multi-thread", "sync"] }

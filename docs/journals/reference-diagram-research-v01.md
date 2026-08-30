@@ -41,7 +41,7 @@ Define one source-verified, four-word-named Draw.io and PNG pair for each git-re
 
 #### Implementation Progress:
 - docs/diagrams/archive/user-journeys/darkstore-fashion-first-look-v01..v03: historical diagram pairs consolidated, renamed, and later archived when the v001 PRD journey superseded them.
-- docs/plans/D04-2026-08-29-user-journey-drawio-plan.md: source path references updated.
+- docs/archive/prd-executable-specs/D04-2026-08-29-user-journey-drawio-plan.md: retained as the superseded diagram implementation plan.
 
 #### Current Focus:
 Relocate and normalize diagram artifacts before authoring the nine-reference pack.

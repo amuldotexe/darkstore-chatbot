@@ -1,5 +1,10 @@
 # Developer-only local references and credentials
 /git-references/
+/node_modules/
+/dist/
+/src-tauri/target/
+/src-tauri/gen/
+.DS_Store
 .env
 .env.local
 .env.*.local

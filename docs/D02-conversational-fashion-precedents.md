@@ -1,7 +1,9 @@
 # Conversational Fashion Dark Store — Precedent Research
 
 **Research date:** 29 August 2026
-**Input:** [D01 — Problem Statement](D01-problem-statement.md)
+**Current contract:** [Specs v001](specs-v001.md)
+
+**Historical input:** [D01 — Problem Statement](archive/prd-executable-specs/D01-problem-statement.md)
 **Purpose:** Identify credible product precedents for a desktop mock that recommends fashion inventory available from a local dark store, lets a shopper refine through conversation, and turns the result into a shoppable action.
 
 ## Premise Check

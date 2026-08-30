@@ -2,7 +2,7 @@
 
 **Research date:** 30 August 2026
 **Decision supported:** Design the desktop mock's UI before selecting a production backend.
-**Related artefacts:** [D01 — Problem Statement](D01-problem-statement.md), [D05 — Live Slikk Dresses Sample](D05-slikk-dresses-sample-v01.csv)
+**Related artefacts:** [Specs v001](specs-v001.md), [archived D01 — Problem Statement](archive/prd-executable-specs/D01-problem-statement.md), [D05 — Live Slikk Dresses Sample](D05-slikk-dresses-sample-v01.csv)
 
 ## Premise Check
 

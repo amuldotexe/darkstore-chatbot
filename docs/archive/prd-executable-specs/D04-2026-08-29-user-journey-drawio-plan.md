@@ -16,9 +16,9 @@
 
 **Files:**
 - Archived source: `docs/diagrams/archive/user-journeys/darkstore-fashion-first-look-v01.drawio`
-- Reference: `docs/D01-problem-statement.md`
+- Archived reference: `docs/archive/prd-executable-specs/D01-problem-statement.md`
 - Reference: `docs/D02-conversational-fashion-precedents.md`
-- Reference: `docs/plans/D03-2026-08-29-user-journey-design.md`
+- Archived reference: `docs/archive/prd-executable-specs/D03-2026-08-29-user-journey-design.md`
 
 **Step 1: Verify the archived historical artifact**
 
