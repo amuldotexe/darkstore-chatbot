@@ -1,6 +1,6 @@
 use darkstore_concierge::catalog::{
-    CatalogProduct, CategoryDecision, rank_category_product_propensity,
-    validate_model_category_decision,
+    CatalogProduct, CatalogRepository, CategoryDecision, EmbeddedCatalogRepository,
+    rank_category_product_propensity, validate_model_category_decision,
 };
 
 fn create_catalog_fixture_records() -> Vec<CatalogProduct> {
@@ -70,4 +70,25 @@ fn test_req_tauri_016_rejects_an_incomplete_next_page() {
         .expect_err("two remaining products must not make a partial page");
 
     assert_eq!(error.kind(), "complete_page_exhausted");
+}
+
+#[tokio::test]
+async fn test_req_tauri_017_embedded_catalogue_loads_without_turso_configuration() {
+    let repository = EmbeddedCatalogRepository::create_embedded_catalog_repository();
+
+    let taxonomy = repository
+        .load_runtime_inventory_taxonomy()
+        .await
+        .expect("the embedded catalogue must not need launch-shell configuration");
+    let products = repository
+        .load_catalog_product_records()
+        .await
+        .expect("the embedded catalogue must be available before any network work");
+
+    assert_eq!(taxonomy, vec!["dresses"]);
+    assert_eq!(products.len(), 8);
+    assert_eq!(
+        products[0].product_name,
+        "Black Minimalist A-Line Evening Dress For Date Night"
+    );
 }

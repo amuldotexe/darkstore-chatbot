@@ -34,6 +34,7 @@ export class ConciergeApplication {
   private statusTone: "neutral" | "error" | "success" = "neutral";
   private chatMessages: Array<{ speaker: "shopper" | "concierge"; text: string }> = [];
   private detailOpen = false;
+  private portfolioBrief = "";
 
   public constructor(
     private readonly root: HTMLElement,
@@ -88,7 +89,7 @@ export class ConciergeApplication {
           <section class="discovery-main" aria-labelledby="edit-title">
             <p class="eyebrow">${isSearch ? "NEW BRIEF" : "YOUR FIRST LOOK"}</p>
             <h1 id="edit-title">${isSearch ? "Tell me what you had in mind." : "A sharper place to start."}</h1>
-            <p class="intro">${isSearch ? "The concierge checks the live v001 category list before it shows anything." : "Three available dresses ranked for this demo edit—then one clear path to something else."}</p>
+            <p class="intro">${isSearch ? "The concierge checks the local v001 category list before it shows anything." : "Three available dresses ranked for this demo edit—then one clear path to something else."}</p>
             ${this.renderStatusMessage()}
             ${isSearch || hasAbsence ? this.renderPortfolioSearchForm() : ""}
             ${hasAbsence ? this.renderAbsentCategoryMessage(outcome) : ""}
@@ -96,7 +97,7 @@ export class ConciergeApplication {
           </section>
           <aside class="edit-sidebar" aria-label="How this demo works">
             <p class="eyebrow">THE V001 RULE</p>
-            <p>GPT-4o identifies only the requested category. Turso facts and local propensity scores choose the products.</p>
+            <p>GPT-4o identifies only the requested category. Embedded catalogue facts and local propensity scores choose the products.</p>
             <dl>
               <div><dt>Catalog today</dt><dd>Dresses only</dd></div>
               <div><dt>Delivery fixture</dt><dd>50 min</dd></div>
@@ -123,7 +124,7 @@ export class ConciergeApplication {
       <form id="portfolio-search" class="portfolio-form">
         <label for="portfolio-brief">What are you looking for?</label>
         <div>
-          <input id="portfolio-brief" name="portfolio-brief" autocomplete="off" required placeholder="e.g. a black dress for a dinner date" />
+          <input id="portfolio-brief" name="portfolio-brief" autocomplete="off" required value="${this.escapeHtml(this.portfolioBrief)}" placeholder="e.g. a black dress for a dinner date" />
           <button class="primary-button" type="submit">Find my three</button>
         </div>
       </form>`;
@@ -226,12 +227,12 @@ export class ConciergeApplication {
     this.root.querySelector<HTMLButtonElement>("#something-else")?.addEventListener("click", () => {
       this.searchMode = "entry";
       this.statusMessage = "";
+      this.portfolioBrief = "";
       this.renderDiscoveryScreen();
       this.root.querySelector<HTMLInputElement>("#portfolio-brief")?.focus();
     });
     this.root.querySelector<HTMLButtonElement>("#next-three")?.addEventListener("click", () => {
-      const brief = this.root.querySelector<HTMLInputElement>("#portfolio-brief")?.value ?? "";
-      void this.loadPortfolioRecommendations(brief, true);
+      void this.loadPortfolioRecommendations(this.portfolioBrief, true);
     });
     this.root.querySelectorAll<HTMLButtonElement>("[data-select-sku]").forEach((button) => {
       button.addEventListener("click", () => {
@@ -275,6 +276,7 @@ export class ConciergeApplication {
       this.screen = "discover";
       this.searchMode = "entry";
       this.statusMessage = "";
+      this.portfolioBrief = "";
       this.renderDiscoveryScreen();
       this.root.querySelector<HTMLInputElement>("#portfolio-brief")?.focus();
     });
@@ -305,15 +307,17 @@ export class ConciergeApplication {
   }
 
   private async loadPortfolioRecommendations(brief: string, showNextPage: boolean): Promise<void> {
-    if (!brief.trim()) {
+    const trimmedBrief = brief.trim();
+    if (!trimmedBrief) {
       this.statusTone = "error";
       this.statusMessage = "Describe what you are looking for first.";
       this.renderDiscoveryScreen();
       return;
     }
+    this.portfolioBrief = trimmedBrief;
     const requestId = this.beginRecommendationRequest();
     try {
-      const outcome = await this.bridge.searchPortfolioProductsPage(brief.trim(), showNextPage);
+      const outcome = await this.bridge.searchPortfolioProductsPage(trimmedBrief, showNextPage);
       this.applyRecommendationOutcome(requestId, outcome);
     } catch (error) {
       this.applyRecommendationError(requestId, error);

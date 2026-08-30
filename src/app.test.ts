@@ -107,6 +107,7 @@ describe("TEST-FRONTEND-GUIDED-CART v001 concierge", () => {
     );
     expect(bridge.loadInitialProductTrio).toHaveBeenCalledOnce();
     expect(root.textContent).toContain("Black Minimalist A-Line Evening Dress");
+    expect(root.textContent).toContain("Embedded catalogue facts and local propensity scores choose the products.");
     expect(root.querySelectorAll("[data-product-sku]")).toHaveLength(3);
 
     root.querySelector<HTMLButtonElement>('[data-select-sku="SKID00083927"]')!.click();
@@ -131,6 +132,7 @@ describe("TEST-FRONTEND-GUIDED-CART v001 concierge", () => {
 
     root.querySelector<HTMLButtonElement>("#chat-more")!.click();
     expect(root.textContent).toContain("Cart 1");
+    expect(root.textContent).toContain("local v001 category list");
   });
 
   it("REQ-TAURI-014 shows no substitute cards for a different requested category", async () => {
@@ -153,6 +155,36 @@ describe("TEST-FRONTEND-GUIDED-CART v001 concierge", () => {
     );
     expect(root.textContent).toContain("currently carries dresses only");
     expect(root.querySelectorAll("[data-product-sku]")).toHaveLength(0);
+  });
+
+  it("REQ-TAURI-018 retains the search brief when requesting the next three cards", async () => {
+    vi.mocked(bridge.searchPortfolioProductsPage).mockResolvedValue({
+      kind: "cards",
+      category_id: "dresses",
+      rationale: "A complete dress edit.",
+      cards: fixtureCards,
+      show_next_three: true,
+    });
+    const app = createConciergeApplication(root, bridge);
+    app.mountApplicationScreen();
+    const keyInput = root.querySelector<HTMLInputElement>("#api-key")!;
+    keyInput.value = "sk-test-key-that-is-never-sent";
+    root.querySelector<HTMLFormElement>("#key-gate")!.requestSubmit();
+    await settleDomEvents();
+
+    root.querySelector<HTMLButtonElement>("#something-else")!.click();
+    const briefInput = root.querySelector<HTMLInputElement>("#portfolio-brief")!;
+    briefInput.value = "A black dress for dinner";
+    root.querySelector<HTMLFormElement>("#portfolio-search")!.requestSubmit();
+    await settleDomEvents();
+
+    root.querySelector<HTMLButtonElement>("#next-three")!.click();
+    await settleDomEvents();
+
+    expect(bridge.searchPortfolioProductsPage).toHaveBeenLastCalledWith(
+      "A black dress for dinner",
+      true,
+    );
   });
 
   it("REQ-TAURI-007 recovers a failed cart recheck with a fresh alternatives request", async () => {

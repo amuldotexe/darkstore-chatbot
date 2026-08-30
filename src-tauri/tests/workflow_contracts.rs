@@ -6,7 +6,7 @@ use std::sync::{
 use async_trait::async_trait;
 use darkstore_concierge::{
     AppError,
-    catalog::{CatalogProduct, CatalogRepository, CategoryDecision},
+    catalog::{CatalogProduct, CatalogRepository, CategoryDecision, EmbeddedCatalogRepository},
     model::CategoryModel,
     workflow::ConciergeWorkflowService,
 };
@@ -106,10 +106,7 @@ async fn test_req_tauri_001_to_008_completes_guided_cart_journey() {
             rationale: "A date-night dress is in the current portfolio.".to_owned(),
         },
     };
-    let catalog = FixtureCatalogRepository {
-        records: create_workflow_fixture_records(),
-        unavailable: false,
-    };
+    let catalog = EmbeddedCatalogRepository::create_embedded_catalog_repository();
     let workflow = ConciergeWorkflowService::create_concierge_workflow_service(
         Arc::new(catalog),
         Arc::new(model),

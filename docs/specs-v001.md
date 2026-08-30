@@ -6,6 +6,14 @@
 **Historical inputs:** [archived problem statement](archive/prd-executable-specs/D01-problem-statement.md), [research precedents](D02-conversational-fashion-precedents.md), and [captured Slikk source rows](D05-slikk-dresses-sample-v01.csv).
 **Runtime inventory:** [Turso/libSQL seed dump](../data/darkstore-dresses-v001.sql), with exactly eight dress rows.
 
+## DMG Delivery Amendment — Embedded Catalogue
+
+`REQ-TAURI-017.0` supersedes the remote-runtime assumptions in this document for the release DMG. The packaged v001 application SHALL compile an eight-product JSON projection of the checked-in source-compatible SQL seed into its Rust binary, derive the sole `dresses` taxonomy locally, and start without `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, a dotenv file, or any startup catalogue network request. The existing Turso SQL dump remains the data-source reference; the remote adapter is not the packaged composition root. GPT-4o still requires a shopper-provided runtime key and still classifies category only.
+
+**Verification:** `TEST-RUST-UNIT-EMBEDDED-017` loads the actual embedded repository, asserts one `dresses` taxonomy entry and eight source-derived product records, and does so without Turso configuration. Release verification mounts and launches the generated DMG before inspecting its key gate.
+
+`REQ-TAURI-018.0` clarifies the existing complete-page rule: browser re-renders SHALL retain the submitted search brief in application state, so the fourth `Next three` card requests the second page using the same brief rather than the empty, freshly rendered input.
+
 ## Product Outcome and Boundaries
 
 The v001 desktop app proves one narrow hypothesis: a seeded shopper context, trend snapshot, inventory classification data, and dark-store catalog can surface three grounded fashion choices that a shopper can customize with fixture-grounded chat guidance and add to a local cart faster than starting with unstructured search.
@@ -146,6 +154,13 @@ The Rust core validates the category result against Turso, filters to `fixture_a
 **AND** SHALL hide the fourth “Next three” card and preserve the existing three-card tray, brief, and chat context
 **SHALL** invite a revised brief or changed chat constraint without switching categories or fabricating cards.
 
+### REQ-TAURI-018.0: Retain pagination brief
+
+**WHEN** a shopper submits a free-text brief that produces a three-card page with a `Next three` action
+**THEN** the application SHALL keep the normalized brief in application state and render it back into the search field
+**AND** SHALL send that same retained brief with `show_next_page = true` when the shopper selects `Next three`
+**SHALL** not read an empty replacement input after the first result-page re-render.
+
 ## Tauri Design (Frontend/IPC/Rust Core + Permissions/Lifecycle)
 
 ### Frontend Contract
@@ -194,6 +209,7 @@ Startup transitions directly to KeyRequired and starts no network work. The clea
 | REQ-TAURI-014.0 | TEST-FRONTEND-ABSENT-014 | frontend | a shirts, jacket, or shoes brief displays Dresses-only recovery, no cards, and an editable brief | absent-category recovery |
 | REQ-TAURI-015.0 | TEST-RUST-INTEG-INVENTORY-015 | rust-integration | absent config, timeout, or malformed row returns `inventory_unavailable`, preserves context, and does not call the model before taxonomy lookup | transport truth |
 | REQ-TAURI-016.0 | TEST-RUST-UNIT-PAGESET-016 | rust-unit | one or two remaining rows return complete-page-exhausted, keep the existing tray, and hide Next three | complete-card contract |
+| REQ-TAURI-018.0 | TEST-FRONTEND-PAGINATION-018 | frontend | next-three request retains the submitted brief instead of reading a re-rendered empty field | pagination continuity |
 
 ## Implementation Plan
 

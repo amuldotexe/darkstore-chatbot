@@ -139,6 +139,71 @@ pub trait CatalogRepository: Send + Sync {
     async fn load_catalog_product_records(&self) -> Result<Vec<CatalogProduct>, AppError>;
 }
 
+/// Read-only v001 catalogue compiled into the desktop binary.
+///
+/// The release path deliberately has no dependency on user-shell configuration or a remote
+/// database. The source projection mirrors the checked-in Turso-compatible seed data.
+#[derive(Debug)]
+pub struct EmbeddedCatalogRepository {
+    records: Result<Vec<CatalogProduct>, AppError>,
+}
+
+impl EmbeddedCatalogRepository {
+    pub fn create_embedded_catalog_repository() -> Self {
+        Self {
+            records: Self::load_embedded_catalog_records(),
+        }
+    }
+
+    fn load_embedded_catalog_records() -> Result<Vec<CatalogProduct>, AppError> {
+        let records: Vec<CatalogProduct> =
+            serde_json::from_str(include_str!("../../data/darkstore-dresses-v001.json"))
+                .map_err(|_| AppError::InventoryConfiguration)?;
+        let mut taxonomy: Vec<String> = records
+            .iter()
+            .map(|product| product.category_id.clone())
+            .collect();
+        taxonomy.sort();
+        taxonomy.dedup();
+
+        if records.len() != 8
+            || taxonomy != ["dresses"]
+            || records.iter().any(|product| {
+                product.category_id.trim().is_empty()
+                    || product.product_name.trim().is_empty()
+                    || !(2..=3).contains(&product.fixture_sizes.len())
+            })
+        {
+            return Err(AppError::InventoryConfiguration);
+        }
+
+        Ok(records)
+    }
+}
+
+#[async_trait]
+impl CatalogRepository for EmbeddedCatalogRepository {
+    async fn load_runtime_inventory_taxonomy(&self) -> Result<Vec<String>, AppError> {
+        let mut taxonomy: Vec<String> = self
+            .records
+            .as_ref()
+            .map_err(|_| AppError::InventoryConfiguration)?
+            .iter()
+            .map(|product| product.category_id.clone())
+            .collect();
+        taxonomy.sort();
+        taxonomy.dedup();
+        Ok(taxonomy)
+    }
+
+    async fn load_catalog_product_records(&self) -> Result<Vec<CatalogProduct>, AppError> {
+        self.records
+            .as_ref()
+            .map(Clone::clone)
+            .map_err(|_| AppError::InventoryConfiguration)
+    }
+}
+
 /// Non-serializable, backend-only Turso configuration.
 ///
 /// Its fields stay private so a connection token cannot become a frontend DTO by accident.
