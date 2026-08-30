@@ -6,8 +6,9 @@ use tokio::sync::Mutex;
 use crate::{
     AppError,
     catalog::{
-        CatalogProduct, CatalogRepository, CategoryDecision, determine_complete_page_availability,
-        rank_category_product_propensity, validate_model_category_decision,
+        CatalogProduct, CatalogRepository, CategoryDecision, determine_unseen_product_availability,
+        rank_category_product_propensity, rank_remaining_product_page,
+        validate_model_category_decision,
     },
     model::CategoryModel,
 };
@@ -112,7 +113,7 @@ impl ConciergeWorkflowService {
     }
 
     pub async fn load_initial_product_trio(&self) -> Result<RecommendationOutcome, AppError> {
-        self.load_category_product_trio(FIRST_LOOK_CONTEXT, FIRST_LOOK_STREAM, true)
+        self.load_category_product_page(FIRST_LOOK_CONTEXT, FIRST_LOOK_STREAM, true, true)
             .await
     }
 
@@ -127,7 +128,7 @@ impl ConciergeWorkflowService {
         }
 
         let stream_identifier = format!("brief:{brief}");
-        self.load_category_product_trio(brief, &stream_identifier, !show_next_page)
+        self.load_category_product_page(brief, &stream_identifier, !show_next_page, false)
             .await
     }
 
@@ -277,11 +278,12 @@ impl ConciergeWorkflowService {
         state.cart_items.clear();
     }
 
-    async fn load_category_product_trio(
+    async fn load_category_product_page(
         &self,
         brief: &str,
         stream_identifier: &str,
         reset_stream: bool,
+        require_complete_page: bool,
     ) -> Result<RecommendationOutcome, AppError> {
         let (api_key, session_generation, shown_skus) = {
             let state = self.session_state.lock().await;
@@ -331,11 +333,15 @@ impl ConciergeWorkflowService {
             .catalog_repository
             .load_catalog_product_records()
             .await?;
-        let cards = rank_category_product_propensity(&records, &category_id, &shown_skus)?;
+        let cards = if require_complete_page {
+            rank_category_product_propensity(&records, &category_id, &shown_skus)?
+        } else {
+            rank_remaining_product_page(&records, &category_id, &shown_skus)?
+        };
         let mut visible_skus = shown_skus;
         visible_skus.extend(cards.iter().map(|card| card.sku.as_str().to_owned()));
         let show_next_three =
-            determine_complete_page_availability(&records, &category_id, &visible_skus);
+            determine_unseen_product_availability(&records, &category_id, &visible_skus);
 
         let mut state = self.session_state.lock().await;
         Self::require_matching_session_generation(&state, session_generation)?;

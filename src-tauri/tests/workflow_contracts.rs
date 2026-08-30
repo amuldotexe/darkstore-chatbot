@@ -282,7 +282,7 @@ async fn test_req_tauri_007_rechecks_fixture_availability_before_cart_mutation()
 }
 
 #[tokio::test]
-async fn test_req_tauri_004_and_016_page_only_complete_unseen_trios() {
+async fn test_req_tauri_004_and_016_returns_final_partial_page_then_exhausts_inventory() {
     let workflow = ConciergeWorkflowService::create_concierge_workflow_service(
         Arc::new(FixtureCatalogRepository {
             records: create_workflow_fixture_records(),
@@ -309,20 +309,32 @@ async fn test_req_tauri_004_and_016_page_only_complete_unseen_trios() {
         .search_portfolio_products_page("A black dress", true)
         .await
         .expect("second complete page exists");
+    let final_page = workflow
+        .search_portfolio_products_page("A black dress", true)
+        .await
+        .expect("the final two dresses should render as a partial page");
     let exhausted_page = workflow
         .search_portfolio_products_page("A black dress", true)
         .await
-        .expect_err("two remaining products must not render as a partial third page");
+        .expect_err("a fourth request must report exhausted inventory");
 
     assert_eq!(first_page.cards.len(), 3);
     assert!(first_page.show_next_three);
     assert_eq!(second_page.cards.len(), 3);
-    assert!(!second_page.show_next_three);
+    assert!(second_page.show_next_three);
+    assert_eq!(final_page.cards.len(), 2);
+    assert!(!final_page.show_next_three);
     assert!(first_page.cards.iter().all(|first| {
         second_page
             .cards
             .iter()
             .all(|second| first.sku != second.sku)
+    }));
+    assert!(second_page.cards.iter().all(|second| {
+        final_page
+            .cards
+            .iter()
+            .all(|final_card| second.sku != final_card.sku)
     }));
     assert_eq!(exhausted_page.kind(), "complete_page_exhausted");
 }

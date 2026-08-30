@@ -1,6 +1,7 @@
 use darkstore_concierge::catalog::{
     CatalogProduct, CatalogRepository, CategoryDecision, EmbeddedCatalogRepository,
-    rank_category_product_propensity, validate_model_category_decision,
+    rank_category_product_propensity, rank_remaining_product_page,
+    validate_model_category_decision,
 };
 
 fn create_catalog_fixture_records() -> Vec<CatalogProduct> {
@@ -70,6 +71,26 @@ fn test_req_tauri_016_rejects_an_incomplete_next_page() {
         .expect_err("two remaining products must not make a partial page");
 
     assert_eq!(error.kind(), "complete_page_exhausted");
+}
+
+#[test]
+fn test_req_tauri_024_returns_final_partial_inventory_page() {
+    let records = create_catalog_fixture_records();
+    let shown = [
+        "SKID00083927".to_owned(),
+        "SKID00174036".to_owned(),
+        "SKID00081801".to_owned(),
+        "SKID00207435".to_owned(),
+        "SKID00119053".to_owned(),
+        "SKID00184392".to_owned(),
+    ];
+
+    let final_page = rank_remaining_product_page(&records, "dresses", &shown)
+        .expect("the last two dresses should be returned");
+
+    assert_eq!(final_page.len(), 2);
+    assert_eq!(final_page[0].sku.as_str(), "SKID00076560");
+    assert_eq!(final_page[1].sku.as_str(), "SKID00167395");
 }
 
 #[tokio::test]

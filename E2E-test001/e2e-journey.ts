@@ -94,10 +94,39 @@ const fixtureCards: ProductCard[] = [
     fixture_style_tags: ["linen", "minimalist", "a_line", "orange"],
     source_product_url: "https://www.slikk.club/dresses/dresses/Fiorra/Orange-Linen-Minimalist-A-Line-Shirt-Dress/SKID00184392",
   },
+  {
+    sku: "SKID00076560",
+    category_id: "dresses",
+    brand: "OUTZIDR",
+    product_name: "Light Blue Minimalist Belted Shirt Dress",
+    current_price_inr: 1237,
+    fixture_available: true,
+    fixture_sizes: ["S", "M", "L"],
+    fixture_delivery_minutes: 50,
+    fixture_propensity_score: 80,
+    fixture_dress_type: "shirt_dress",
+    fixture_style_tags: ["minimalist", "belted", "shirt_dress", "light_blue"],
+    source_product_url: "https://www.slikk.club/dresses/dresses/OUTZIDR/Light-Blue-Minimalist-Belted-Shirt-Dress/SKID00076560",
+  },
+  {
+    sku: "SKID00167395",
+    category_id: "dresses",
+    brand: "OUTZIDR",
+    product_name: "Minimalist Beige Solid Straight-Fit Shirt Dress",
+    current_price_inr: 1367,
+    fixture_available: true,
+    fixture_sizes: ["XS", "S", "M"],
+    fixture_delivery_minutes: 50,
+    fixture_propensity_score: 80,
+    fixture_dress_type: "shirt_dress",
+    fixture_style_tags: ["minimalist", "everyday", "straight_fit", "beige"],
+    source_product_url: "https://www.slikk.club/dresses/dresses/OUTZIDR/Minimalist-Beige-Solid-Straight-Fit-Shirt-Dress/SKID00167395",
+  },
 ];
 
 const initialCards = fixtureCards.slice(0, 3);
 const nextCards = fixtureCards.slice(3, 6);
+const finalCards = fixtureCards.slice(6, 8);
 
 function createCardsOutcome(cards: ProductCard[], showNextThree: boolean): RecommendationOutcome {
   return {
@@ -111,6 +140,7 @@ function createCardsOutcome(cards: ProductCard[], showNextThree: boolean): Recom
 
 function createFixtureJourneyBridge(): ConciergeBridge {
   let cartItems: CartSnapshot["items"] = [];
+  let searchNextPageRequests = 0;
 
   return {
     async configureSessionOpenaiKey() {
@@ -129,9 +159,14 @@ function createFixtureJourneyBridge(): ConciergeBridge {
           show_next_three: false,
         };
       }
-      return showNextPage
-        ? createCardsOutcome(nextCards, false)
-        : createCardsOutcome(initialCards, true);
+      if (!showNextPage) {
+        searchNextPageRequests = 0;
+        return createCardsOutcome(initialCards, true);
+      }
+      searchNextPageRequests += 1;
+      return searchNextPageRequests === 1
+        ? createCardsOutcome(nextCards, true)
+        : createCardsOutcome(finalCards, false);
     },
     async selectProductChatContext(productSku, selectionSource): Promise<ProductChatContext> {
       const product = fixtureCards.find((candidate) => candidate.sku === productSku);

@@ -11,12 +11,26 @@ pub enum AppError {
     InventoryConfiguration,
     #[error("That category is not available in this demo.")]
     InvalidCategoryDecision,
-    #[error("There are not three unseen products left for another page.")]
+    #[error("No more inventory.")]
     CompletePageExhausted,
     #[error("That product or size is no longer available in the demo inventory.")]
     ProductUnavailable,
     #[error("The model response did not match the category contract.")]
     InvalidModelResponse,
+    #[error(
+        "OpenAI rejected this API key. Check that it is active and belongs to the intended project."
+    )]
+    ModelAuthenticationFailed,
+    #[error(
+        "This API key does not have access to GPT-4o. Check the project model access and billing settings."
+    )]
+    ModelAccessDenied,
+    #[error(
+        "OpenAI has temporarily limited this project. Check its usage and billing, then try again."
+    )]
+    ModelRateLimited,
+    #[error("OpenAI rejected this request. Please update the app and try again.")]
+    ModelRequestRejected,
     #[error("The model request could not be completed. Please try again.")]
     ModelUnavailable,
     #[error("The session state is temporarily unavailable. Please try again.")]
@@ -33,6 +47,10 @@ impl AppError {
             Self::CompletePageExhausted => "complete_page_exhausted",
             Self::ProductUnavailable => "product_unavailable",
             Self::InvalidModelResponse => "invalid_model_response",
+            Self::ModelAuthenticationFailed => "model_authentication_failed",
+            Self::ModelAccessDenied => "model_access_denied",
+            Self::ModelRateLimited => "model_rate_limited",
+            Self::ModelRequestRejected => "model_request_rejected",
             Self::ModelUnavailable => "model_unavailable",
             Self::SessionUnavailable => "session_unavailable",
         }

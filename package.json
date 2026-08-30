@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --port 1420",
     "build": "tsc --noEmit && vite build",
+    "build:dmg:clean": "bash scripts/build_clean_dmg_v001.sh",
     "test": "vitest run",
     "test:watch": "vitest",
     "tauri": "cargo tauri"

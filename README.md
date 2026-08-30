@@ -11,14 +11,14 @@ The v001 inventory contains eight dresses from [data/darkstore-dresses-v001.json
 
 ## Local setup
 
-Build one self-contained macOS DMG:
+Build one self-contained macOS DMG with stale package outputs removed first:
 
 ```bash
 pnpm install
-pnpm tauri build --bundles dmg --no-sign
+pnpm build:dmg:clean
 ```
 
-The result is `src-tauri/target/release/bundle/dmg/Darkstore Concierge_0.1.0_aarch64.dmg` on this Apple Silicon machine. Mount it and drag out the app. It contains the eight-product demo catalogue and needs no Turso URL, token, dotenv file, or launch-shell configuration. The first screen asks the shopper to enter their own OpenAI key for the current in-memory session; never put that key in `.env`, source code, or git.
+The build selects a locally installed `Developer ID Application` identity (or a specific `APPLE_SIGNING_IDENTITY`) and produces exactly one signed artifact: `src-tauri/target/release/bundle/dmg/Darkstore-Concierge-v001-current.dmg`. Mount it and drag out the app. It contains the eight-product demo catalogue and needs no Turso URL, token, dotenv file, or launch-shell configuration. The first screen asks the shopper to enter their own OpenAI key for the current in-memory session; never put that key in `.env`, source code, or git.
 
 ## Verification
 

@@ -100,6 +100,31 @@ pub fn rank_category_product_propensity(
     category_id: &str,
     shown_skus: &[String],
 ) -> Result<Vec<CatalogProduct>, AppError> {
+    let cards = rank_remaining_product_page(records, category_id, shown_skus)?;
+    if cards.len() < 3 {
+        return Err(AppError::CompletePageExhausted);
+    }
+    Ok(cards)
+}
+
+pub fn rank_remaining_product_page(
+    records: &[CatalogProduct],
+    category_id: &str,
+    shown_skus: &[String],
+) -> Result<Vec<CatalogProduct>, AppError> {
+    let eligible = collect_ranked_product_candidates(records, category_id, shown_skus);
+    if eligible.is_empty() {
+        return Err(AppError::CompletePageExhausted);
+    }
+
+    Ok(eligible.into_iter().take(3).collect())
+}
+
+fn collect_ranked_product_candidates(
+    records: &[CatalogProduct],
+    category_id: &str,
+    shown_skus: &[String],
+) -> Vec<CatalogProduct> {
     let shown: HashSet<&str> = shown_skus.iter().map(String::as_str).collect();
     let mut eligible: Vec<_> = records
         .iter()
@@ -118,19 +143,15 @@ pub fn rank_category_product_propensity(
             .then_with(|| left.sku.cmp(&right.sku))
     });
 
-    if eligible.len() < 3 {
-        return Err(AppError::CompletePageExhausted);
-    }
-
-    Ok(eligible.into_iter().take(3).collect())
+    eligible
 }
 
-pub fn determine_complete_page_availability(
+pub fn determine_unseen_product_availability(
     records: &[CatalogProduct],
     category_id: &str,
     shown_skus: &[String],
 ) -> bool {
-    rank_category_product_propensity(records, category_id, shown_skus).is_ok()
+    rank_remaining_product_page(records, category_id, shown_skus).is_ok()
 }
 
 #[async_trait]

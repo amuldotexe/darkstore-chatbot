@@ -35,6 +35,7 @@ export class ConciergeApplication {
   private chatMessages: Array<{ speaker: "shopper" | "concierge"; text: string }> = [];
   private detailOpen = false;
   private portfolioBrief = "";
+  private portfolioSearchPending = false;
 
   public constructor(
     private readonly root: HTMLElement,
@@ -79,7 +80,7 @@ export class ConciergeApplication {
 
   private renderDiscoveryScreen(): void {
     const outcome = this.recommendationOutcome;
-    const productCards = outcome?.kind === "cards" ? outcome.cards : [];
+    const productCards = this.portfolioSearchPending ? [] : outcome?.kind === "cards" ? outcome.cards : [];
     const isSearch = this.searchMode === "entry";
     const hasAbsence = outcome?.kind === "not_in_inventory";
     this.root.innerHTML = `
@@ -92,6 +93,7 @@ export class ConciergeApplication {
             <p class="intro">${isSearch ? "The concierge checks the local v001 category list before it shows anything." : "Three available dresses ranked for this demo edit—then one clear path to something else."}</p>
             ${this.renderStatusMessage()}
             ${isSearch || hasAbsence ? this.renderPortfolioSearchForm() : ""}
+            ${this.portfolioSearchPending ? '<p class="search-pending" role="status">Finding matching dresses…</p>' : ""}
             ${hasAbsence ? this.renderAbsentCategoryMessage(outcome) : ""}
             ${productCards.length > 0 ? this.renderProductCardGrid(productCards) : ""}
           </section>
@@ -113,7 +115,7 @@ export class ConciergeApplication {
   private renderApplicationHeader(): string {
     return `
       <header class="application-header">
-        <a class="wordmark" href="#first-look" id="return-first-look">slikk<span>/</span>edit</a>
+        <a class="wordmark" href="#first-look" id="return-first-look">Darkstore Concierge</a>
         <p>Fashion, made decisive.</p>
         <button class="cart-button" type="button" aria-label="Local cart has ${this.cartCount} item${this.cartCount === 1 ? "" : "s"}">Cart ${this.cartCount}</button>
       </header>`;
@@ -125,7 +127,7 @@ export class ConciergeApplication {
         <label for="portfolio-brief">What are you looking for?</label>
         <div>
           <input id="portfolio-brief" name="portfolio-brief" autocomplete="off" required value="${this.escapeHtml(this.portfolioBrief)}" placeholder="e.g. a black dress for a dinner date" />
-          <button class="primary-button" type="submit">Find my three</button>
+          <button class="primary-button" type="submit" ${this.portfolioSearchPending ? "disabled" : ""}>${this.portfolioSearchPending ? "Finding matching dresses…" : "Show matching dresses"}</button>
         </div>
       </form>`;
   }
@@ -140,13 +142,21 @@ export class ConciergeApplication {
   }
 
   private renderProductCardGrid(cards: ProductCard[]): string {
-    const fourthAction = this.searchMode === "entry" && this.recommendationOutcome?.show_next_three
-      ? `<button class="fourth-card" id="next-three" type="button"><span>Next three</span><small>Show another complete set</small><b aria-hidden="true">→</b></button>`
-      : `<button class="fourth-card" id="something-else" type="button"><span>I want something else</span><small>Describe the occasion or style</small><b aria-hidden="true">→</b></button>`;
-    return `<section class="product-grid" aria-label="Three available recommendations">
+    const fourthAction = this.renderFourthDiscoveryCard();
+    return `<section class="product-grid" aria-label="${cards.length} available recommendations">
       ${cards.map((card, index) => this.renderProductCard(card, index)).join("")}
       ${fourthAction}
     </section>`;
+  }
+
+  private renderFourthDiscoveryCard(): string {
+    if (this.searchMode === "entry" && this.recommendationOutcome?.show_next_three) {
+      return `<button class="fourth-card" id="next-three" type="button"><span>Show 3 more</span><small>See the next available dresses</small><b aria-hidden="true">→</b></button>`;
+    }
+    if (this.searchMode === "entry") {
+      return `<aside class="fourth-card inventory-terminal" role="status"><span>No more inventory.</span><small>Try another brief above to start a new dress search.</small></aside>`;
+    }
+    return `<button class="fourth-card" id="something-else" type="button"><span>I want something else</span><small>Describe the occasion or style</small><b aria-hidden="true">→</b></button>`;
   }
 
   private renderProductCard(card: ProductCard, index: number): string {
@@ -225,9 +235,7 @@ export class ConciergeApplication {
       void this.loadPortfolioRecommendations(brief, false);
     });
     this.root.querySelector<HTMLButtonElement>("#something-else")?.addEventListener("click", () => {
-      this.searchMode = "entry";
-      this.statusMessage = "";
-      this.portfolioBrief = "";
+      this.enterPortfolioSearchMode();
       this.renderDiscoveryScreen();
       this.root.querySelector<HTMLInputElement>("#portfolio-brief")?.focus();
     });
@@ -274,9 +282,7 @@ export class ConciergeApplication {
     });
     this.root.querySelector<HTMLButtonElement>("#chat-more")?.addEventListener("click", () => {
       this.screen = "discover";
-      this.searchMode = "entry";
-      this.statusMessage = "";
-      this.portfolioBrief = "";
+      this.enterPortfolioSearchMode();
       this.renderDiscoveryScreen();
       this.root.querySelector<HTMLInputElement>("#portfolio-brief")?.focus();
     });
@@ -297,6 +303,11 @@ export class ConciergeApplication {
   }
 
   private async loadFirstLookRecommendations(): Promise<void> {
+    this.searchMode = "hidden";
+    this.portfolioBrief = "";
+    this.portfolioSearchPending = false;
+    this.recommendationOutcome = null;
+    this.recommendationState = createInitialConciergeState<ProductCard>();
     const requestId = this.beginRecommendationRequest();
     try {
       const outcome = await this.bridge.loadInitialProductTrio();
@@ -315,6 +326,8 @@ export class ConciergeApplication {
       return;
     }
     this.portfolioBrief = trimmedBrief;
+    this.portfolioSearchPending = true;
+    this.renderDiscoveryScreen();
     const requestId = this.beginRecommendationRequest();
     try {
       const outcome = await this.bridge.searchPortfolioProductsPage(trimmedBrief, showNextPage);
@@ -396,6 +409,15 @@ export class ConciergeApplication {
     return requestId;
   }
 
+  private enterPortfolioSearchMode(): void {
+    this.searchMode = "entry";
+    this.statusMessage = "";
+    this.portfolioBrief = "";
+    this.portfolioSearchPending = false;
+    this.recommendationOutcome = null;
+    this.recommendationState = createInitialConciergeState<ProductCard>();
+  }
+
   private applyRecommendationOutcome(requestId: string, outcome: RecommendationOutcome): void {
     if (this.recommendationState.latestRequestId !== requestId) {
       return;
@@ -406,6 +428,7 @@ export class ConciergeApplication {
       cards: outcome.cards,
       showNextThree: outcome.show_next_three,
     });
+    this.portfolioSearchPending = false;
     this.recommendationOutcome = outcome;
     this.statusMessage = "";
     this.renderDiscoveryScreen();
@@ -415,9 +438,33 @@ export class ConciergeApplication {
     if (this.recommendationState.latestRequestId !== requestId) {
       return;
     }
+    this.portfolioSearchPending = false;
+    const shopperError = this.normaliseShopperError(error);
+    if (shopperError.kind === "complete_page_exhausted" && this.applyExhaustedInventoryTerminal()) {
+      this.renderDiscoveryScreen();
+      return;
+    }
     this.recommendationOutcome = null;
-    this.setShopperError(error);
+    this.statusTone = "error";
+    this.statusMessage = shopperError.message;
     this.renderDiscoveryScreen();
+  }
+
+  private applyExhaustedInventoryTerminal(): boolean {
+    if (this.searchMode !== "entry" || this.recommendationOutcome?.kind !== "cards") {
+      return false;
+    }
+    this.recommendationOutcome = {
+      ...this.recommendationOutcome,
+      show_next_three: false,
+    };
+    this.recommendationState = {
+      ...this.recommendationState,
+      showNextThree: false,
+    };
+    this.statusTone = "neutral";
+    this.statusMessage = "";
+    return true;
   }
 
   private createFixtureStylingResponse(): string {

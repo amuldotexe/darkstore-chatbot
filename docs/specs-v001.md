@@ -1,6 +1,6 @@
 # Specs v001 — Dark-store fashion concierge
 
-**Status:** Canonical v001 executable specification; three Tauri review iterations complete.
+**Status:** Canonical v001 executable specification; three Tauri review iterations complete, with the v001 brief-search, final-inventory, and identity corrections implemented.
 **Canonical journey:** [darkstore-propensity-cart-journey-v001.drawio](diagrams/darkstore-propensity-cart-journey-v001.drawio)
 **Canonical architecture:** [turso-dress-architecture-v001.drawio](diagrams/turso-dress-architecture-v001.drawio)
 **Historical inputs:** [archived problem statement](archive/prd-executable-specs/D01-problem-statement.md), [research precedents](D02-conversational-fashion-precedents.md), and [captured Slikk source rows](D05-slikk-dresses-sample-v01.csv).
@@ -12,19 +12,45 @@
 
 **Verification:** `TEST-RUST-UNIT-EMBEDDED-017` loads the actual embedded repository, asserts one `dresses` taxonomy entry and eight source-derived product records, and does so without Turso configuration. Release verification mounts and launches the generated DMG before inspecting its key gate.
 
-`REQ-TAURI-018.0` clarifies the existing complete-page rule: browser re-renders SHALL retain the submitted search brief in application state, so the fourth `Next three` card requests the second page using the same brief rather than the empty, freshly rendered input.
+`REQ-TAURI-018.0` clarifies pagination continuity: browser re-renders SHALL retain the submitted search brief in application state, so the fourth `Show 3 more` card requests the next page using the same brief rather than the empty, freshly rendered input.
+
+`REQ-TAURI-019.0` hardens the live OpenAI boundary: the Rust gateway SHALL map provider HTTP failures to shopper-safe typed errors without serializing the API key, request body, provider body, or transport internals. `401` SHALL report key rejection; `403` or `404` SHALL report GPT-4o project-access denial; `429` SHALL report project rate limiting; other `4xx` responses SHALL report a rejected request; and `5xx` or transport failures SHALL report temporary unavailability.
+
+`REQ-TAURI-020.0` validates the GPT-4o Structured Outputs request itself: the `text.format.schema` SHALL be a single root object with `additionalProperties: false`, all four decision fields required, and no root union. The model SHALL return the discriminator `kind` plus nullable inactive-branch fields; Rust SHALL consume only a contract-valid `matched` or `not_in_inventory` decision.
+
+`REQ-TAURI-021.0` validates the raw Responses REST result: after a successful provider response, the Rust gateway SHALL extract the JSON decision from the first non-empty `output[]` message content item whose type is `output_text`. The legacy top-level `output_text` convenience field remains accepted for fixture compatibility. Missing, blank, refusal-only, or malformed output SHALL remain a typed model-contract failure.
+
+`REQ-TAURI-022.0` makes release packaging deterministic: `pnpm build:dmg:clean` SHALL remove Darkstore debug bundles and prior release bundle directories, clean the `darkstore-concierge` Cargo package, build one unsigned DMG, verify its disk-image checksum, and leave exactly one artifact at `src-tauri/target/release/bundle/dmg/Darkstore-Concierge-v001-current.dmg`.
+
+## V001 Interaction Correction — Brief Search, Exhaustion, and App Identity
+
+The search control exists to submit a new shopper brief, not to promise a
+personally selected number of items. V001 still interprets the brief as a
+category only, then ranks the available dresses deterministically. Therefore a
+brief such as `black dress` can legitimately return the same high-propensity
+dress set as the first look; the screen must make that successful result visible
+instead of appearing inert.
+
+The eight-dress fixture produces non-overlapping result pages of three, three,
+then two dresses. V001 renders that final partial page honestly and follows it
+with a terminal `No more inventory.` state. That terminal state is neither an
+inventory-transport, model, nor generic command failure.
+
+The desktop app is named **Darkstore Concierge**. `slikk/edit` is neither an
+app name nor a permitted shopper-facing wordmark. Source-derived brand metadata
+inside a product card remains product data, not application identity.
 
 ## Product Outcome and Boundaries
 
 The v001 desktop app proves one narrow hypothesis: a seeded shopper context, trend snapshot, inventory classification data, and dark-store catalog can surface three grounded fashion choices that a shopper can customize with fixture-grounded chat guidance and add to a local cart faster than starting with unstructured search.
 
-The shopper enters their own OpenAI API key at runtime. The app reads one remote Turso/libSQL inventory table with eight Slikk-derived dress records; it uses artificial persona, trend, availability, size, delivery, and propensity fixtures. It does not implement login, persisted preferences, checkout, payments, inventory synchronization, sidecars, or user-filesystem-backed product storage.
+The shopper enters their own OpenAI API key at runtime. The release app reads an embedded eight-dress JSON projection compiled from the Turso-compatible source seed; it uses artificial persona, trend, availability, size, delivery, and propensity fixtures. It does not implement login, persisted preferences, checkout, payments, inventory synchronization, sidecars, or user-filesystem-backed product storage.
 
-## V001 Turso Inventory Boundary
+## V001 Embedded Inventory Boundary
 
-The sole runtime table is `inventory_products`, seeded from `data/darkstore-dresses-v001.sql`. It has exactly eight rows—well below the 100-row limit—and its only supported `category_id` is `dresses`. Source-derived fields retain the captured Slikk SKU, brand, title, price, URL, capture time, and merchandising data. The explicitly named `fixture_*` fields are v001 demo assumptions: availability, two or three size options, 50-minute delivery, deterministic propensity score, dress type, and style tags.
+The source reference is the `inventory_products` table in `data/darkstore-dresses-v001.sql`. It has exactly eight rows—well below the 100-row limit—and its only supported `category_id` is `dresses`. The release binary reads the equivalent checked-in JSON projection locally, with no runtime database network dependency. Source-derived fields retain the captured Slikk SKU, brand, title, price, URL, capture time, and merchandising data. The explicitly named `fixture_*` fields are v001 demo assumptions: availability, two or three size options, 50-minute delivery, deterministic propensity score, dress type, and style tags.
 
-Turso database URL and auth token are backend-only local environment values, named `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN`. The checked-in `.env.example` contains no values. A user-authenticated Turso deployment creates `darkstore-dresses-v001` from the seed dump; the WebView never receives database credentials or talks to Turso directly.
+`TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` may configure a development-only source adapter, but are not required for the packaged v001 release. The checked-in `.env.example` contains no values. The WebView never receives database credentials or talks to a database directly.
 
 ## V001 Category Then Propensity Decision Rule
 
@@ -66,9 +92,13 @@ The Rust core validates the category result against Turso, filters to `fixture_a
 ### REQ-TAURI-004.0: Search portfolio pages
 
 **WHEN** a shopper submits a free-text brief or selects the fourth initial card
-**THEN** the application SHALL return exactly three eligible search-result cards and show a “Next three” action only when another complete unseen set of three exists
+**THEN** the application SHALL return up to three eligible search-result cards,
+with exactly three cards on every non-final page and one or two cards permitted
+only on the final page
 **AND** SHALL classify the brief to matched `dresses`, rank only that category by propensity, and exclude SKUs already shown for the same brief and result stream
-**SHALL** use the absent-category recovery when the brief is not a dress request; it SHALL hide “Next three” and request a revised brief rather than render a one- or two-card page when fewer than three unseen dresses remain.
+**SHALL** show `Show 3 more` while any unseen eligible dress remains; after the
+final page it SHALL render `No more inventory.` and use absent-category recovery
+only when the brief is not a dress request.
 
 ### REQ-TAURI-005.0: Re-anchor selected product chat
 
@@ -130,8 +160,10 @@ The Rust core validates the category result against Turso, filters to `fixture_a
 
 **WHEN** Rust core receives one validated category ID for a first-look, search, pagination, or alternative request
 **THEN** it SHALL query Turso for distinct `fixture_available = 1` products in that category and sort them by `fixture_propensity_score DESC, sku ASC`
-**AND** SHALL resolve equal propensity scores by ascending SKU before applying shown-SKU exclusions and taking the next three
-**SHALL** return a typed fixture-configuration or complete-page-exhausted result instead of crossing into another category or returning fewer than three cards.
+**AND** SHALL resolve equal propensity scores by ascending SKU before applying shown-SKU exclusions and taking at most the next three
+**SHALL** require a three-card set for first look, but SHALL return the final one
+or two eligible dresses for a later search page instead of crossing into another
+category or hiding remaining inventory.
 
 ### REQ-TAURI-014.0: Recover absent inventory category
 
@@ -147,19 +179,57 @@ The Rust core validates the category result against Turso, filters to `fixture_a
 **AND** SHALL preserve the shopper’s key, brief, chat anchor, and local cart while showing neither product cards nor a `not_in_inventory` dresses-only message
 **SHALL** not call GPT-4o when the taxonomy cannot be read, because the runtime category list is unavailable.
 
-### REQ-TAURI-016.0: Gate incomplete three-card pages
+### REQ-TAURI-016.0: Surface final inventory page
 
-**WHEN** fewer than three eligible unseen `dresses` remain in a search or alternative result stream after shown-SKU exclusions
-**THEN** the application SHALL return a typed complete-page-exhausted result instead of a partial product list
-**AND** SHALL hide the fourth “Next three” card and preserve the existing three-card tray, brief, and chat context
-**SHALL** invite a revised brief or changed chat constraint without switching categories or fabricating cards.
+**WHEN** one or two eligible unseen `dresses` remain in a search or alternative result stream after shown-SKU exclusions
+**THEN** the application SHALL return those remaining cards as the final page,
+hide `Show 3 more`, and render `No more inventory.`
+**AND** SHALL preserve the brief and chat context without switching categories
+or fabricating cards
+**SHALL** return `complete_page_exhausted` only when no eligible unseen dress
+remains or a duplicate next-page request bypasses the visible terminal state.
 
 ### REQ-TAURI-018.0: Retain pagination brief
 
-**WHEN** a shopper submits a free-text brief that produces a three-card page with a `Next three` action
+**WHEN** a shopper submits a free-text brief that produces a three-card page with a `Show 3 more` action
 **THEN** the application SHALL keep the normalized brief in application state and render it back into the search field
-**AND** SHALL send that same retained brief with `show_next_page = true` when the shopper selects `Next three`
+**AND** SHALL send that same retained brief with `show_next_page = true` when the shopper selects `Show 3 more`
 **SHALL** not read an empty replacement input after the first result-page re-render.
+
+### REQ-TAURI-023.0: Submit an alternate brief visibly
+
+**WHEN** a shopper enters a non-blank alternate brief and selects the search
+submit control
+**THEN** the control SHALL be labelled `Show matching dresses`, become disabled
+while its request is pending, and invoke `search_portfolio_products_page` once
+with the normalized brief and `show_next_page = false`
+**AND** a successful response SHALL replace the prior tray with exactly the
+returned three cards, identify that it is a result for the submitted brief, and
+state that v001 ranks available dresses by category and propensity
+**SHALL** not leave the previous first-look tray as the only visible outcome of
+a completed brief submission, even when the returned SKUs are identical.
+
+### REQ-TAURI-024.0: End a depleted discovery stream clearly
+
+**WHEN** the current search result page has no additional unseen dress after
+any remaining one- or two-dress final page has been shown
+**THEN** the application SHALL remove the `Show 3 more` action and render the
+shopper-facing terminal copy `No more inventory.` below the current valid tray
+**AND** a guarded `complete_page_exhausted` response from a stale, repeated, or
+otherwise invalid next-page invocation SHALL resolve to that same terminal
+state while preserving the last valid tray and retained brief
+**SHALL** not hide remaining eligible inventory, render a generic transport
+error, or render an absent-category message for this condition.
+
+### REQ-TAURI-025.0: Use Darkstore Concierge identity
+
+**WHEN** any shopper-facing v001 screen, window title, startup screen, or
+discovery header renders application identity
+**THEN** it SHALL identify the app as `Darkstore Concierge`
+**AND** it SHALL not render `slikk/edit`, `Slikk edit`, or a variation as the
+application wordmark or title
+**SHALL** preserve source-derived product-brand fields only within product
+metadata, where they are not presented as the application identity.
 
 ## Tauri Design (Frontend/IPC/Rust Core + Permissions/Lifecycle)
 
@@ -168,6 +238,17 @@ The Rust core validates the category result against Turso, filters to `fixture_a
 The TypeScript frontend owns rendering and ephemeral screen state. It invokes narrow typed operations for session setup, first look, search paging, product-chat selection, variant confirmation, and local cart mutation. Product-chat replies are explicitly fixture-grounded v001 guidance; GPT-4o remains category-only. A category response is either `matched` with `dresses` and rationale, `not_in_inventory` with shopper-safe copy, or `inventory_unavailable` with retry copy; the latter two render no cards but are visibly distinct. Product cards render only Turso-rehydrated fields.
 
 Every recommendation-producing action carries a frontend-generated request ID. The reducer records the latest request ID for its stream and ignores all result or error actions whose ID no longer matches. The frontend receives a normalized tagged success-or-error DTO, never an opaque rejected promise or raw provider payload.
+
+The alternate-brief screen owns three explicit visual states: `BriefEntry`,
+`BriefPending`, and `BriefResults`. `BriefEntry` shows no stale first-look tray;
+`BriefPending` disables `Show matching dresses` and exposes progress; and
+`BriefResults` visibly labels the returned set with the submitted brief and
+v001's category-then-propensity limit. `show_next_three = false` after a valid
+search page renders the terminal `No more inventory.` notice. A
+`complete_page_exhausted` command error is normalized to the same terminal
+presentation only for an attempted subsequent page; it is not shown as a
+generic error. App-level copy uses `Darkstore Concierge`; product brands remain
+within card metadata.
 
 ### Command Layer
 
@@ -195,29 +276,38 @@ Startup transitions directly to KeyRequired and starts no network work. The clea
 | REQ-TAURI-002.0 | TEST-RUST-UNIT-TRIO-002 | rust-unit | matched dresses query renders its three highest-propensity distinct cards plus fourth action | first look |
 | REQ-TAURI-002.0 | TEST-SEED-SQL-INVENTORY-002 | sql-seed | one strict `inventory_products` table has exactly eight available `dresses` rows and 2–3 sizes each | bounded inventory |
 | REQ-TAURI-003.0 | TEST-RUST-UNIT-CATEGORY-003 | rust-unit | only `matched:dresses` or `not_in_inventory` is accepted; malformed, multiple, unsupported, and product-ID values recover safely | model grounding |
-| REQ-TAURI-004.0 | TEST-RUST-UNIT-PAGE-004 | rust-unit | dress-ranked next page excludes shown SKUs and exposes Next three only for another complete set | search recovery |
+| REQ-TAURI-004.0 | TEST-RUST-UNIT-PAGE-004 | rust-unit | dress-ranked pages exclude shown SKUs, return 3/3/2 products from the eight-dress fixture, and expose `Show 3 more` while an unseen dress remains | search recovery |
 | REQ-TAURI-005.0 | TEST-FRONTEND-CHAT-005 | frontend | every card source produces one retained chat state | selection handoff |
 | REQ-TAURI-006.0 | TEST-FRONTEND-VARIANT-006 | frontend | add control remains disabled until a required variant is selected | variant gate |
 | REQ-TAURI-007.0 | TEST-RUST-INTEG-STOCK-007 | rust-integration | changed Turso availability routes to alternatives without cart mutation | commerce truth |
 | REQ-TAURI-008.0 | TEST-FRONTEND-CART-008 | frontend | local cart persists while discovery route changes | continuation |
 | REQ-TAURI-009.0 | TEST-RUST-UNIT-RACE-009 | rust-unit | only the latest request ID can commit recommendation state | stale-response safety |
 | REQ-TAURI-010.0 | TEST-RUST-INTEG-ERROR-010 | rust-integration | command returns serializable AppError for Turso and model failures without credential leakage | command boundary |
+| REQ-TAURI-019.0 | TEST-RUST-UNIT-OPENAI-019 | rust-unit | provider HTTP statuses produce shopper-safe typed errors with no provider body or credential exposure | live-model diagnostics |
+| REQ-TAURI-020.0 | TEST-RUST-UNIT-OPENAI-020 | rust-unit | request schema is one strict root object and a full strict match payload parses to a category decision | provider request validity |
+| REQ-TAURI-021.0 | TEST-RUST-UNIT-OPENAI-021 | rust-unit | raw Responses `output[]` message content extracts the first valid `output_text` JSON decision | provider response validity |
+| REQ-TAURI-022.0 | TEST-SHELL-DMG-CLEAN-022 | shell | clean-only release mode removes stale `dmg` and `macos` package directories | release determinism |
 | REQ-TAURI-011.0 | TEST-CONFIG-CAPABILITY-011 | config | main capability has required commands and no filesystem, shell, plugin, sidecar, updater, remote-image, or direct Turso grant | least privilege |
 | REQ-TAURI-012.0 | TEST-RUST-UNIT-LIFECYCLE-012 | rust-unit | clear session invalidates key, context and request IDs; late response cannot commit | lifecycle safety |
 | REQ-TAURI-013.0 | TEST-SEED-SQL-PROPENSITY-013 | sql-seed | available dresses are ordered by score descending, then SKU ascending; equal-score rows prove the tie-break | deterministic ranking |
-| REQ-TAURI-013.0 | TEST-RUST-UNIT-PROPENSITY-013 | rust-unit | only eligible Turso rows in the validated category are ordered by descending score, then ascending SKU | deterministic ranking |
+| REQ-TAURI-013.0 | TEST-RUST-UNIT-PROPENSITY-013 | rust-unit | only eligible Turso rows in the validated category are ordered by descending score, then ascending SKU, with a final partial page permitted after first look | deterministic ranking |
 | REQ-TAURI-014.0 | TEST-FRONTEND-ABSENT-014 | frontend | a shirts, jacket, or shoes brief displays Dresses-only recovery, no cards, and an editable brief | absent-category recovery |
 | REQ-TAURI-015.0 | TEST-RUST-INTEG-INVENTORY-015 | rust-integration | absent config, timeout, or malformed row returns `inventory_unavailable`, preserves context, and does not call the model before taxonomy lookup | transport truth |
-| REQ-TAURI-016.0 | TEST-RUST-UNIT-PAGESET-016 | rust-unit | one or two remaining rows return complete-page-exhausted, keep the existing tray, and hide Next three | complete-card contract |
+| REQ-TAURI-016.0 | TEST-RUST-UNIT-PAGESET-016 | rust-unit | one or two remaining rows return as the final page; a zero-row repeated request returns complete-page-exhausted | final inventory page |
 | REQ-TAURI-018.0 | TEST-FRONTEND-PAGINATION-018 | frontend | next-three request retains the submitted brief instead of reading a re-rendered empty field | pagination continuity |
+| REQ-TAURI-023.0 | TEST-FRONTEND-BRIEF-023 | frontend | `Show matching dresses` disables during one typed invoke, then replaces the stale tray and labels the submitted brief even when returned SKUs match first look | brief submission |
+| REQ-TAURI-023.0 | TEST-MOCK-TAURI-BRIEF-023 | mocked-tauri | mock `search_portfolio_products_page` receives normalized `black dress` and `showNextPage: false`; pending, success, and typed-error UI states are distinct | IPC/UI contract |
+| REQ-TAURI-024.0 | TEST-RUST-UNIT-EXHAUSTION-024 | rust-unit | an eight-dress stream yields non-overlapping 3/3/2 pages; a zero-row repeated request is a typed complete-page-exhausted guard | core pagination |
+| REQ-TAURI-024.0 | TEST-FRONTEND-EXHAUSTION-024 | frontend | final valid one- or two-card page and guarded repeated-next error hide `Show 3 more`, retain the valid tray and brief, and show `No more inventory.` | terminal recovery |
+| REQ-TAURI-025.0 | TEST-FRONTEND-IDENTITY-025 | frontend | key gate, header, discovery, chat, and window-facing copy expose `Darkstore Concierge` and no app-identity `slikk/edit` string | app identity |
 
 ## Implementation Plan
 
 ### TDD Plan
 
-1. **STUB** — validate the Turso seed dump, then create typed request/response tests for REQ-TAURI-001.0 through REQ-TAURI-016.0, including `not_in_inventory`, `inventory_unavailable`, category validation, complete-page exhaustion, within-category SQL order, stale-response, AppError, capability, CSP, and session-clear cases.
+1. **STUB** — add frontend state and mocked-Tauri boundary tests for REQ-TAURI-023.0 through REQ-TAURI-025.0 before changing the brief form, terminal pagination copy, or app identity. Retain the existing typed tests for category validation, complete-page exhaustion, stale-response, AppError, capability, CSP, and session-clear cases.
 2. **RED** — run Rust-core and frontend contract tests; record missing command and reducer surfaces.
-3. **GREEN** — implement Turso connection handling, category-only model output validation, within-category SQL order, selection state, variant gate, and local-cart mutation with minimum command adapters.
+3. **GREEN** — implement the explicit brief-entry/pending/results state, shopper-visible terminal exhaustion path, and Darkstore Concierge identity with the minimum frontend and typed-command changes. Preserve category-only model output validation, within-category propensity order, selection state, variant gate, and local-cart mutation.
 4. **REFACTOR** — isolate the model gateway, shrink command handlers, and preserve four-word names for new internal surfaces.
 5. **VERIFY** — run Rust, frontend, mocked-Tauri, capability/CSP configuration, and static spec-traceability checks before any application commit.
 
@@ -230,6 +320,9 @@ Startup transitions directly to KeyRequired and starts no network work. The clea
 - [x] Tauri App Architecture review — iteration 1 added request freshness and typed command-error contracts.
 - [x] Tauri Desktop Security and Lifecycle review — iteration 2 added a main-label capability, restrictive CSP, and bounded session lifecycle.
 - [x] Rust and frontend build gates — `cargo fmt`, Clippy with warnings denied, Rust tests/build, Vitest, TypeScript, and Vite production build pass locally with deterministic adapters.
+- [x] REQ-TAURI-023.0 brief submission state is implemented and verified at the frontend/Tauri boundary.
+- [x] REQ-TAURI-024.0 final partial inventory page and terminal `No more inventory.` copy are implemented and verified against the eight-dress fixture.
+- [x] REQ-TAURI-025.0 Darkstore Concierge identity replaces all shopper-facing `slikk/edit` app branding and is verified.
 
 ## Open Questions
 
@@ -278,6 +371,6 @@ The next two sections record the required Tauri executable-spec reviews. A resol
 
 **Rubber-duck trace:** “The seed has eight dresses. After two three-card pages, two rows remain. Does the UI show them despite its three-card promise? Separately, a Turso timeout happens before taxonomy lookup. Does the shopper see ‘we only carry dresses’ even though the app simply cannot read the database? Finally, is a seeded `fixture_available` value being presented as live stock?”
 
-**Gaps found:** the packet used live-stock language for fixture data, did not distinguish an unavailable database from a valid absent-category answer, and made the fourth card unconditional even where the remaining result set could only make an incomplete page.
+**Gaps found:** the packet used live-stock language for fixture data, did not distinguish an unavailable database from a valid absent-category answer, and made the fourth card unconditional without stating how a final partial inventory page should behave.
 
-**Resolution:** REQ-TAURI-015.0 introduces the typed `inventory_unavailable` state and blocks the model call until taxonomy is available. REQ-TAURI-016.0 makes a three-card page atomic: one or two remaining rows never form a page, and the fourth action is hidden. REQ-TAURI-002.0, -004.0, -007.0, and -013.0 now use `fixture_available` language; the architecture diagram separates source facts, demo fixtures, model interpretation, and Turso transport truth.
+**Resolution:** REQ-TAURI-015.0 introduces the typed `inventory_unavailable` state and blocks the model call until taxonomy is available. REQ-TAURI-016.0 now renders a final one- or two-card page, followed by `No more inventory.` and no fourth continuation action; only a zero-row repeat returns `complete_page_exhausted`. REQ-TAURI-002.0, -004.0, -007.0, and -013.0 now use `fixture_available` language; the architecture diagram separates source facts, demo fixtures, model interpretation, and Turso transport truth.
