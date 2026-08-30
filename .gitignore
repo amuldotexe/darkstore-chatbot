@@ -1,0 +1,6 @@
+# Developer-only local references and credentials
+/git-references/
+.env
+.env.local
+.env.*.local
+!.env.example
