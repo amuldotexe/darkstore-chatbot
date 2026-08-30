@@ -13,7 +13,7 @@
 ### Task 1: Create the editable swimlane diagram
 
 **Files:**
-- Create: `docs/user-journey-implementation-v01.drawio`
+- Create: `docs/diagrams/darkstore-fashion-first-look-v01.drawio`
 - Reference: `docs/D01-problem-statement.md`
 - Reference: `docs/D02-conversational-fashion-precedents.md`
 - Reference: `docs/plans/D03-2026-08-29-user-journey-design.md`
@@ -23,7 +23,7 @@
 Run:
 
 ```bash
-test ! -e docs/user-journey-implementation-v01.drawio
+test ! -e docs/diagrams/darkstore-fashion-first-look-v01.drawio
 ```
 
 Expected: exit code `0` before the file is added.
@@ -47,7 +47,7 @@ Use standard `mxGraphModel` geometry, `swimlane` styles, and individually editab
 Run:
 
 ```bash
-xmllint --noout docs/user-journey-implementation-v01.drawio
+xmllint --noout docs/diagrams/darkstore-fashion-first-look-v01.drawio
 ```
 
 Expected: exit code `0` and no output.
@@ -55,7 +55,7 @@ Expected: exit code `0` and no output.
 ### Task 2: Validate the implementation contract is present in the diagram
 
 **Files:**
-- Test: `docs/user-journey-implementation-v01.drawio`
+- Test: `docs/diagrams/darkstore-fashion-first-look-v01.drawio`
 
 **Step 1: Run a semantic-label check**
 
@@ -66,7 +66,7 @@ python3 - <<'PY'
 from pathlib import Path
 from xml.etree import ElementTree
 
-diagram_path = Path("docs/user-journey-implementation-v01.drawio")
+diagram_path = Path("docs/diagrams/darkstore-fashion-first-look-v01.drawio")
 root = ElementTree.parse(diagram_path).getroot()
 labels = "\n".join(
     cell.attrib.get("value", "")
@@ -96,7 +96,7 @@ Expected: `Diagram labels cover the approved journey contract.`
 
 **Step 2: Visually inspect editability in diagrams.net**
 
-Open `docs/user-journey-implementation-v01.drawio` in diagrams.net and confirm that the swimlanes, nodes, and edges are independently selectable and that the recovery branch is visible without scrolling horizontally past the canvas bounds.
+Open `docs/diagrams/darkstore-fashion-first-look-v01.drawio` in diagrams.net and confirm that the swimlanes, nodes, and edges are independently selectable and that the recovery branch is visible without scrolling horizontally past the canvas bounds.
 
 **Step 3: Check repository state**
 
