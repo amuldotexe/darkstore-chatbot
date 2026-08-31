@@ -1,53 +1,25 @@
-# Darkstore fashion concierge — v002
+# Darkstore Concierge
 
-A local Tauri desktop demonstration of a narrow dark-store shopping journey:
+A desktop demo for choosing and customising a dress from a small dark-store catalogue.
 
-1. The shopper enters an OpenAI key for the current memory-only session.
-2. GPT-4o receives only the available dress candidates and chooses up to three offered SKU identifiers.
-3. Rust validates the SKU set and falls back to local propensity ranking when GPT’s response is unavailable or invalid.
-4. The shopper chooses a dress, receives fixture-grounded styling guidance, selects a size, and adds it to a local cart.
+[Download v0.2.0 for macOS](https://github.com/amuldotexe/darkstore-chatbot/releases/download/v0.2.0/Darkstore-Concierge-v002-universal.dmg) — universal, signed, and Apple-notarized.
 
-The v002 inventory contains eight dresses from [data/darkstore-dresses-v001.json](data/darkstore-dresses-v001.json), an embedded projection of the source-compatible [SQL seed](data/darkstore-dresses-v001.sql). `fixture_*` fields are deliberately synthetic demo data. There is no checkout, payment, persistent cart, or account.
+## Run
 
-## Local setup
+Requires macOS 11 or later and an OpenAI API key for recommendations. Open the DMG, move the app to Applications, and start it. The key is kept only for the current session.
 
-Build one self-contained macOS DMG with stale package outputs removed first:
+## Build
 
 ```bash
 pnpm install
-pnpm build:dmg:clean
-```
-
-The build removes old bundle outputs, targets both Apple Silicon and Intel Macs, selects a locally installed `Developer ID Application` identity (or a specific `APPLE_SIGNING_IDENTITY`), and produces exactly one signed artifact: `src-tauri/target/universal-apple-darwin/release/bundle/dmg/Darkstore-Concierge-v002-universal.dmg`. Mount it and drag out the app. It contains the eight-product demo catalogue and needs no Turso URL, token, dotenv file, or launch-shell configuration. The first screen asks the shopper to enter their own OpenAI key for the current memory-only session; never put that key in `.env`, source code, or git.
-
-The normal release build is intentionally notarized, not merely signed. First store an App Store Connect API key in the local macOS Keychain, then run the release build with its profile name:
-
-```bash
-xcrun notarytool store-credentials "darkstore-notary" \
-  --key /secure/path/AuthKey_KEYID.p8 \
-  --key-id KEYID \
-  --issuer ISSUER_ID
-
 APPLE_NOTARY_KEYCHAIN_PROFILE=darkstore-notary pnpm build:dmg:clean
 ```
 
-The script uploads the fresh DMG, waits for Apple, staples the notarization ticket, and requires Gatekeeper to accept the final DMG. The API key stays in the Keychain and outside the repository. `ALLOW_UNNOTARIZED_LOCAL_BUILD=1` is an explicit local-testing escape hatch only; never distribute an artifact built that way.
+The profile must be a local `notarytool` Keychain profile. The build clears old artifacts, creates a universal DMG, notarizes it, staples the ticket, and verifies Gatekeeper.
 
-## Verification
+## Scope
 
-```bash
-pnpm test
-pnpm build
-cargo fmt --manifest-path src-tauri/Cargo.toml --all -- --check
-cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets --all-features -- -D warnings
-cargo test --manifest-path src-tauri/Cargo.toml --all-targets --all-features
-cargo build --manifest-path src-tauri/Cargo.toml --all-targets --all-features
-```
+- Eight synthetic dresses; local cart only.
+- No account, payment, checkout, or persistent customer data.
 
-The current executable improvement specification is [docs/spec-improvement-02.md](docs/spec-improvement-02.md). The source-of-truth journey and runtime architecture are in [docs/diagrams](docs/diagrams).
-
-# User Journey
-
-- After entering an OpenAI key, the shopper sees 3 cards and a "More" button.
-
-![alt text](image.png)
+[Specification](docs/spec-improvement-02.md) · [Journey and architecture](docs/diagrams)
