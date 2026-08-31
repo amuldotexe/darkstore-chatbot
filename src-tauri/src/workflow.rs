@@ -6,11 +6,11 @@ use tokio::sync::Mutex;
 use crate::{
     AppError,
     catalog::{
-        CatalogProduct, CatalogRepository, CategoryDecision, determine_unseen_product_availability,
-        rank_category_product_propensity, rank_remaining_product_page,
-        validate_model_category_decision,
+        CatalogProduct, CatalogRepository, collect_available_product_candidates,
+        determine_unseen_product_availability, rank_category_product_propensity,
+        rank_remaining_product_page, resolve_model_selected_products,
     },
-    model::CategoryModel,
+    model::ProductSelectionModel,
 };
 
 const FIRST_LOOK_CONTEXT: &str =
@@ -74,18 +74,18 @@ struct ConciergeSessionState {
 /// cleared or replaced session from mutating the new session.
 pub struct ConciergeWorkflowService {
     catalog_repository: Arc<dyn CatalogRepository>,
-    category_model: Arc<dyn CategoryModel>,
+    product_selection_model: Arc<dyn ProductSelectionModel>,
     session_state: Mutex<ConciergeSessionState>,
 }
 
 impl ConciergeWorkflowService {
     pub fn create_concierge_workflow_service(
         catalog_repository: Arc<dyn CatalogRepository>,
-        category_model: Arc<dyn CategoryModel>,
+        product_selection_model: Arc<dyn ProductSelectionModel>,
     ) -> Self {
         Self {
             catalog_repository,
-            category_model,
+            product_selection_model,
             session_state: Mutex::new(ConciergeSessionState::default()),
         }
     }
@@ -113,7 +113,7 @@ impl ConciergeWorkflowService {
     }
 
     pub async fn load_initial_product_trio(&self) -> Result<RecommendationOutcome, AppError> {
-        self.load_category_product_page(FIRST_LOOK_CONTEXT, FIRST_LOOK_STREAM, true, true)
+        self.load_selected_product_page(FIRST_LOOK_CONTEXT, FIRST_LOOK_STREAM, true, true)
             .await
     }
 
@@ -124,11 +124,11 @@ impl ConciergeWorkflowService {
     ) -> Result<RecommendationOutcome, AppError> {
         let brief = brief.as_ref().trim();
         if brief.is_empty() {
-            return Err(AppError::InvalidCategoryDecision);
+            return Err(AppError::InvalidShopperBrief);
         }
 
         let stream_identifier = format!("brief:{brief}");
-        self.load_category_product_page(brief, &stream_identifier, !show_next_page, false)
+        self.load_selected_product_page(brief, &stream_identifier, !show_next_page, false)
             .await
     }
 
@@ -278,7 +278,7 @@ impl ConciergeWorkflowService {
         state.cart_items.clear();
     }
 
-    async fn load_category_product_page(
+    async fn load_selected_product_page(
         &self,
         brief: &str,
         stream_identifier: &str,
@@ -300,48 +300,37 @@ impl ConciergeWorkflowService {
             (api_key, state.session_generation, shown_skus)
         };
 
-        let taxonomy = self
-            .catalog_repository
-            .load_runtime_inventory_taxonomy()
-            .await?;
-        let model_decision = self
-            .category_model
-            .classify_runtime_catalog_category(&api_key, &taxonomy, brief)
-            .await?;
-        let validated_decision = validate_model_category_decision(&taxonomy, model_decision)?;
-
-        let (category_id, rationale) = match validated_decision {
-            CategoryDecision::Matched {
-                category_id,
-                rationale,
-            } => (category_id, rationale),
-            CategoryDecision::NotInInventory { acknowledgement } => {
-                let mut state = self.session_state.lock().await;
-                Self::require_matching_session_generation(&state, session_generation)?;
-                state.retained_brief = brief.to_owned();
-                return Ok(RecommendationOutcome {
-                    kind: "not_in_inventory".to_owned(),
-                    category_id: None,
-                    rationale: acknowledgement,
-                    cards: Vec::new(),
-                    show_next_three: false,
-                });
-            }
-        };
-
         let records = self
             .catalog_repository
             .load_catalog_product_records()
             .await?;
-        let cards = if require_complete_page {
-            rank_category_product_propensity(&records, &category_id, &shown_skus)?
+        let category_id = "dresses";
+        let fallback_cards = if require_complete_page {
+            rank_category_product_propensity(&records, category_id, &shown_skus)?
         } else {
-            rank_remaining_product_page(&records, &category_id, &shown_skus)?
+            rank_remaining_product_page(&records, category_id, &shown_skus)?
         };
+        let candidates = collect_available_product_candidates(&records, category_id, &shown_skus);
+        let model_cards = self
+            .product_selection_model
+            .select_available_product_skus(&api_key, &candidates, brief)
+            .await
+            .ok()
+            .and_then(|selection| {
+                resolve_model_selected_products(&candidates, &selection.selected_skus)
+                    .ok()
+                    .map(|cards| (cards, selection.rationale))
+            });
+        let (cards, rationale) = model_cards.unwrap_or_else(|| {
+            (
+                fallback_cards,
+                "Three available dresses ranked from the current inventory.".to_owned(),
+            )
+        });
         let mut visible_skus = shown_skus;
         visible_skus.extend(cards.iter().map(|card| card.sku.as_str().to_owned()));
         let show_next_three =
-            determine_unseen_product_availability(&records, &category_id, &visible_skus);
+            determine_unseen_product_availability(&records, category_id, &visible_skus);
 
         let mut state = self.session_state.lock().await;
         Self::require_matching_session_generation(&state, session_generation)?;
@@ -352,7 +341,7 @@ impl ConciergeWorkflowService {
 
         Ok(RecommendationOutcome {
             kind: "cards".to_owned(),
-            category_id: Some(category_id),
+            category_id: Some(category_id.to_owned()),
             rationale,
             cards,
             show_next_three,

@@ -63,38 +63,6 @@ impl CatalogProduct {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(tag = "kind", rename_all = "snake_case")]
-pub enum CategoryDecision {
-    Matched {
-        category_id: String,
-        rationale: String,
-    },
-    NotInInventory {
-        acknowledgement: String,
-    },
-}
-
-pub fn validate_model_category_decision(
-    taxonomy: &[String],
-    decision: CategoryDecision,
-) -> Result<CategoryDecision, AppError> {
-    match &decision {
-        CategoryDecision::Matched {
-            category_id,
-            rationale,
-        } if taxonomy.iter().any(|known| known == category_id) && !rationale.trim().is_empty() => {
-            Ok(decision)
-        }
-        CategoryDecision::NotInInventory { acknowledgement }
-            if !acknowledgement.trim().is_empty() =>
-        {
-            Ok(decision)
-        }
-        _ => Err(AppError::InvalidCategoryDecision),
-    }
-}
-
 pub fn rank_category_product_propensity(
     records: &[CatalogProduct],
     category_id: &str,
@@ -112,7 +80,7 @@ pub fn rank_remaining_product_page(
     category_id: &str,
     shown_skus: &[String],
 ) -> Result<Vec<CatalogProduct>, AppError> {
-    let eligible = collect_ranked_product_candidates(records, category_id, shown_skus);
+    let eligible = collect_available_product_candidates(records, category_id, shown_skus);
     if eligible.is_empty() {
         return Err(AppError::CompletePageExhausted);
     }
@@ -120,7 +88,7 @@ pub fn rank_remaining_product_page(
     Ok(eligible.into_iter().take(3).collect())
 }
 
-fn collect_ranked_product_candidates(
+pub fn collect_available_product_candidates(
     records: &[CatalogProduct],
     category_id: &str,
     shown_skus: &[String],
@@ -144,6 +112,31 @@ fn collect_ranked_product_candidates(
     });
 
     eligible
+}
+
+pub fn resolve_model_selected_products(
+    candidates: &[CatalogProduct],
+    selected_skus: &[String],
+) -> Result<Vec<CatalogProduct>, AppError> {
+    let expected_count = candidates.len().min(3);
+    if expected_count == 0 || selected_skus.len() != expected_count {
+        return Err(AppError::InvalidModelResponse);
+    }
+
+    let mut selected = Vec::with_capacity(selected_skus.len());
+    let mut seen_skus = HashSet::with_capacity(selected_skus.len());
+    for sku in selected_skus {
+        if !seen_skus.insert(sku.as_str()) {
+            return Err(AppError::InvalidModelResponse);
+        }
+        let product = candidates
+            .iter()
+            .find(|candidate| candidate.sku.as_str() == sku)
+            .cloned()
+            .ok_or(AppError::InvalidModelResponse)?;
+        selected.push(product);
+    }
+    Ok(selected)
 }
 
 pub fn determine_unseen_product_availability(

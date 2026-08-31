@@ -1,7 +1,6 @@
 use darkstore_concierge::catalog::{
-    CatalogProduct, CatalogRepository, CategoryDecision, EmbeddedCatalogRepository,
-    rank_category_product_propensity, rank_remaining_product_page,
-    validate_model_category_decision,
+    CatalogProduct, CatalogRepository, EmbeddedCatalogRepository, rank_category_product_propensity,
+    rank_remaining_product_page, resolve_model_selected_products,
 };
 
 fn create_catalog_fixture_records() -> Vec<CatalogProduct> {
@@ -26,22 +25,6 @@ fn create_catalog_fixture_records() -> Vec<CatalogProduct> {
 }
 
 #[test]
-fn test_req_tauri_003_accepts_only_dress_category_decision() {
-    let taxonomy = ["dresses".to_owned()];
-
-    let decision = validate_model_category_decision(
-        &taxonomy,
-        CategoryDecision::Matched {
-            category_id: "dresses".to_owned(),
-            rationale: "A party dress fits the brief.".to_owned(),
-        },
-    )
-    .expect("valid dress decision should pass");
-
-    assert!(matches!(decision, CategoryDecision::Matched { .. }));
-}
-
-#[test]
 fn test_req_tauri_013_ranks_three_products_by_score_then_sku() {
     let records = create_catalog_fixture_records();
 
@@ -52,6 +35,36 @@ fn test_req_tauri_013_ranks_three_products_by_score_then_sku() {
     assert_eq!(
         identifiers,
         ["SKID00083927", "SKID00174036", "SKID00081801"]
+    );
+}
+
+#[test]
+fn test_req_tauri_027_rejects_duplicate_or_unknown_model_skus() {
+    let candidates = create_catalog_fixture_records();
+    let duplicate = resolve_model_selected_products(
+        &candidates,
+        &[
+            "SKID00083927".to_owned(),
+            "SKID00083927".to_owned(),
+            "SKID00081801".to_owned(),
+        ],
+    );
+    let unknown = resolve_model_selected_products(
+        &candidates,
+        &[
+            "SKID00083927".to_owned(),
+            "SKID00174036".to_owned(),
+            "NOT-OFFERED".to_owned(),
+        ],
+    );
+
+    assert_eq!(
+        duplicate.expect_err("duplicate selection must fail").kind(),
+        "invalid_model_response"
+    );
+    assert_eq!(
+        unknown.expect_err("unknown selection must fail").kind(),
+        "invalid_model_response"
     );
 }
 

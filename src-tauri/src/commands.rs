@@ -5,7 +5,7 @@ use tauri::State;
 use crate::{
     AppError,
     catalog::EmbeddedCatalogRepository,
-    model::OpenAiCategoryGateway,
+    model::OpenAiProductGateway,
     workflow::{
         CartSnapshot, ConciergeWorkflowService, ProductChatContext, RecommendationOutcome,
         SessionStatus,
@@ -21,11 +21,11 @@ pub struct AppServices {
 pub fn create_runtime_app_services() -> AppServices {
     let catalog_repository =
         Arc::new(EmbeddedCatalogRepository::create_embedded_catalog_repository());
-    let category_model = Arc::new(OpenAiCategoryGateway::create_openai_category_gateway());
+    let product_selection_model = Arc::new(OpenAiProductGateway::create_openai_product_gateway());
     AppServices {
         workflow_service: ConciergeWorkflowService::create_concierge_workflow_service(
             catalog_repository,
-            category_model,
+            product_selection_model,
         ),
     }
 }

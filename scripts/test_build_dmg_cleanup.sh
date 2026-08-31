@@ -10,6 +10,22 @@ if ! rg -q 'APPLE_SIGNING_IDENTITY' "$project_directory/scripts/build_clean_dmg_
   exit 1
 fi
 
+if ! rg -q 'universal-apple-darwin' "$project_directory/scripts/build_clean_dmg_v001.sh"; then
+  printf 'Expected the DMG build to target a universal Apple binary.\n' >&2
+  exit 1
+fi
+
+if ! rg -q 'aarch64-apple-darwin/release' "$project_directory/scripts/build_clean_dmg_v001.sh" \
+  || ! rg -q 'x86_64-apple-darwin/release' "$project_directory/scripts/build_clean_dmg_v001.sh"; then
+  printf 'Expected both architecture-specific release directories to be cleared before packaging.\n' >&2
+  exit 1
+fi
+
+if ! rg -q 'codesign --verify --deep --strict' "$project_directory/scripts/build_clean_dmg_v001.sh"; then
+  printf 'Expected the DMG build to verify the mounted application signature.\n' >&2
+  exit 1
+fi
+
 if rg -q -- '--no-sign' "$project_directory/scripts/build_clean_dmg_v001.sh"; then
   printf 'DMG build must not opt out of signing.\n' >&2
   exit 1

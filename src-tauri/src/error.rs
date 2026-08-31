@@ -9,13 +9,13 @@ pub enum AppError {
     InventoryUnavailable,
     #[error("The catalogue fixture does not contain a complete three-card set.")]
     InventoryConfiguration,
-    #[error("That category is not available in this demo.")]
-    InvalidCategoryDecision,
+    #[error("Describe the dress, style, colour, mood, or occasion you want.")]
+    InvalidShopperBrief,
     #[error("No more inventory.")]
     CompletePageExhausted,
     #[error("That product or size is no longer available in the demo inventory.")]
     ProductUnavailable,
-    #[error("The model response did not match the category contract.")]
+    #[error("The model response could not be used.")]
     InvalidModelResponse,
     #[error(
         "OpenAI rejected this API key. Check that it is active and belongs to the intended project."
@@ -43,7 +43,7 @@ impl AppError {
             Self::InvalidApiKey => "invalid_api_key",
             Self::InventoryUnavailable => "inventory_unavailable",
             Self::InventoryConfiguration => "inventory_configuration",
-            Self::InvalidCategoryDecision => "invalid_category_decision",
+            Self::InvalidShopperBrief => "invalid_shopper_brief",
             Self::CompletePageExhausted => "complete_page_exhausted",
             Self::ProductUnavailable => "product_unavailable",
             Self::InvalidModelResponse => "invalid_model_response",

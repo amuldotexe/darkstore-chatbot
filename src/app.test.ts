@@ -63,11 +63,11 @@ function createFixtureConciergeBridge(): ConciergeBridge {
       show_next_three: true,
     }),
     searchPortfolioProductsPage: vi.fn().mockResolvedValue({
-      kind: "not_in_inventory",
-      category_id: null,
-      rationale: "This v001 demo currently carries dresses only.",
-      cards: [],
-      show_next_three: false,
+      kind: "cards",
+      category_id: "dresses",
+      rationale: "Three available dresses selected from the candidate set.",
+      cards: fixtureCards,
+      show_next_three: true,
     }),
     selectProductChatContext: vi.fn().mockResolvedValue({
       product: fixtureCards[0],
@@ -84,7 +84,7 @@ async function settleDomEvents(): Promise<void> {
   await Promise.resolve();
 }
 
-describe("TEST-FRONTEND-GUIDED-CART v001 concierge", () => {
+describe("TEST-FRONTEND-GUIDED-CART v002 concierge", () => {
   let root: HTMLElement;
   let bridge: ConciergeBridge;
 
@@ -99,6 +99,8 @@ describe("TEST-FRONTEND-GUIDED-CART v001 concierge", () => {
     app.mountApplicationScreen();
 
     const keyInput = root.querySelector<HTMLInputElement>("#api-key")!;
+    expect(root.textContent).toContain("v002 uses a small, dress-only demonstration catalogue.");
+    expect(root.textContent).not.toContain("v001");
     keyInput.value = "sk-test-key-that-is-never-sent";
     root.querySelector<HTMLFormElement>("#key-gate")!.requestSubmit();
     await settleDomEvents();
@@ -108,7 +110,9 @@ describe("TEST-FRONTEND-GUIDED-CART v001 concierge", () => {
     );
     expect(bridge.loadInitialProductTrio).toHaveBeenCalledOnce();
     expect(root.textContent).toContain("Black Minimalist A-Line Evening Dress");
-    expect(root.textContent).toContain("Embedded catalogue facts and local propensity scores choose the products.");
+    expect(root.textContent).toContain(
+      "GPT-4o chooses only from the available dress cards. Embedded catalogue facts validate every selection, with local propensity ranking as the safe fallback.",
+    );
     expect(root.querySelectorAll("[data-product-sku]")).toHaveLength(3);
 
     root.querySelector<HTMLButtonElement>('[data-select-sku="SKID00083927"]')!.click();
@@ -133,10 +137,12 @@ describe("TEST-FRONTEND-GUIDED-CART v001 concierge", () => {
 
     root.querySelector<HTMLButtonElement>("#chat-more")!.click();
     expect(root.textContent).toContain("Cart 1");
-    expect(root.textContent).toContain("local v001 category list");
+    expect(root.textContent).toContain(
+      "Share a colour, mood, occasion, or style. The concierge selects only from the dresses available right now.",
+    );
   });
 
-  it("REQ-TAURI-014 shows no substitute cards for a different requested category", async () => {
+  it("REQ-TAURI-029 returns available dress cards for a colour or occasion brief", async () => {
     const app = createConciergeApplication(root, bridge);
     app.mountApplicationScreen();
     const keyInput = root.querySelector<HTMLInputElement>("#api-key")!;
@@ -146,16 +152,16 @@ describe("TEST-FRONTEND-GUIDED-CART v001 concierge", () => {
 
     root.querySelector<HTMLButtonElement>("#something-else")!.click();
     const briefInput = root.querySelector<HTMLInputElement>("#portfolio-brief")!;
-    briefInput.value = "A linen shirt for Goa";
+    briefInput.value = "A red dress for dinner";
     root.querySelector<HTMLFormElement>("#portfolio-search")!.requestSubmit();
     await settleDomEvents();
 
     expect(bridge.searchPortfolioProductsPage).toHaveBeenCalledWith(
-      "A linen shirt for Goa",
+      "A red dress for dinner",
       false,
     );
-    expect(root.textContent).toContain("currently carries dresses only");
-    expect(root.querySelectorAll("[data-product-sku]")).toHaveLength(0);
+    expect(root.querySelectorAll("[data-product-sku]")).toHaveLength(3);
+    expect(root.textContent).not.toContain("NOT IN THIS DEMO");
   });
 
   it("REQ-TAURI-018 retains the search brief when requesting the next three cards", async () => {
@@ -357,5 +363,47 @@ describe("TEST-FRONTEND-GUIDED-CART v001 concierge", () => {
       "Help me choose a dress for tonight.",
       false,
     );
+  });
+
+  it("REQ-TAURI-029 through 031 treats style briefs as dresses and locks a completed add", async () => {
+    vi.mocked(bridge.searchPortfolioProductsPage).mockResolvedValue({
+      kind: "cards",
+      category_id: "dresses",
+      rationale: "Three dresses selected from the live candidate set.",
+      cards: fixtureCards,
+      show_next_three: true,
+    });
+    const app = createConciergeApplication(root, bridge);
+    app.mountApplicationScreen();
+    const keyInput = root.querySelector<HTMLInputElement>("#api-key")!;
+    keyInput.value = "sk-test-key-that-is-never-sent";
+    root.querySelector<HTMLFormElement>("#key-gate")!.requestSubmit();
+    await settleDomEvents();
+
+    expect(root.querySelector<HTMLButtonElement>("#something-else")!.textContent).toContain(
+      "Search another dress",
+    );
+    root.querySelector<HTMLButtonElement>("#something-else")!.click();
+    const briefInput = root.querySelector<HTMLInputElement>("#portfolio-brief")!;
+    briefInput.value = "black";
+    root.querySelector<HTMLFormElement>("#portfolio-search")!.requestSubmit();
+    await settleDomEvents();
+
+    expect(root.querySelectorAll("[data-product-sku]")).toHaveLength(3);
+    expect(root.textContent).not.toContain("The model response did not match the category contract");
+    expect(root.textContent).not.toContain("NOT IN THIS DEMO");
+
+    root.querySelector<HTMLButtonElement>('[data-select-sku="SKID00083927"]')!.click();
+    await settleDomEvents();
+    const sizeSelect = root.querySelector<HTMLSelectElement>("#selected-size")!;
+    sizeSelect.value = "M";
+    sizeSelect.dispatchEvent(new Event("change", { bubbles: true }));
+    await settleDomEvents();
+    root.querySelector<HTMLButtonElement>("#add-cart")!.click();
+    await settleDomEvents();
+
+    const addedButton = root.querySelector<HTMLButtonElement>("#add-cart")!;
+    expect(addedButton.textContent).toContain("Added to local cart");
+    expect(addedButton.disabled).toBe(true);
   });
 });

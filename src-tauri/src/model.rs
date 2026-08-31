@@ -1,29 +1,36 @@
 use async_trait::async_trait;
 use reqwest::Client;
+use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 
-use crate::{AppError, catalog::CategoryDecision};
+use crate::{AppError, catalog::CatalogProduct};
 
-#[async_trait]
-pub trait CategoryModel: Send + Sync {
-    async fn classify_runtime_catalog_category(
-        &self,
-        api_key: &str,
-        taxonomy: &[String],
-        brief: &str,
-    ) -> Result<CategoryDecision, AppError>;
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ProductSelection {
+    pub selected_skus: Vec<String>,
+    pub rationale: String,
 }
 
-/// Rust-only adapter for the OpenAI Responses API.
+#[async_trait]
+pub trait ProductSelectionModel: Send + Sync {
+    async fn select_available_product_skus(
+        &self,
+        api_key: &str,
+        candidates: &[CatalogProduct],
+        brief: &str,
+    ) -> Result<ProductSelection, AppError>;
+}
+
+/// Rust-only adapter for GPT-4o product selection from the supplied inventory snapshot.
 ///
-/// The adapter sends a supplied session key over HTTPS but never retains, logs, or returns it.
-/// The WebView receives only the parsed category decision through the command layer.
-pub struct OpenAiCategoryGateway {
+/// The shopper key stays in session-only workflow state. This adapter uses it only for the
+/// outbound HTTPS request and never logs, serializes, or retains it.
+pub struct OpenAiProductGateway {
     http_client: Client,
 }
 
-impl OpenAiCategoryGateway {
-    pub fn create_openai_category_gateway() -> Self {
+impl OpenAiProductGateway {
+    pub fn create_openai_product_gateway() -> Self {
         Self {
             http_client: Client::new(),
         }
@@ -31,13 +38,13 @@ impl OpenAiCategoryGateway {
 }
 
 #[async_trait]
-impl CategoryModel for OpenAiCategoryGateway {
-    async fn classify_runtime_catalog_category(
+impl ProductSelectionModel for OpenAiProductGateway {
+    async fn select_available_product_skus(
         &self,
         api_key: &str,
-        taxonomy: &[String],
+        candidates: &[CatalogProduct],
         brief: &str,
-    ) -> Result<CategoryDecision, AppError> {
+    ) -> Result<ProductSelection, AppError> {
         if !api_key.trim().starts_with("sk-") || api_key.trim().len() < 12 {
             return Err(AppError::InvalidApiKey);
         }
@@ -46,7 +53,7 @@ impl CategoryModel for OpenAiCategoryGateway {
             .http_client
             .post("https://api.openai.com/v1/responses")
             .bearer_auth(api_key.trim())
-            .json(&create_category_request_payload(taxonomy, brief))
+            .json(&create_product_selection_request_payload(candidates, brief))
             .send()
             .await
             .map_err(|_| AppError::ModelUnavailable)?;
@@ -60,7 +67,7 @@ impl CategoryModel for OpenAiCategoryGateway {
             .await
             .map_err(|_| AppError::InvalidModelResponse)?;
 
-        parse_openai_category_response(&response)
+        parse_openai_product_selection(&response)
     }
 }
 
@@ -74,36 +81,56 @@ pub fn map_openai_failure_status(status_code: u16) -> AppError {
     }
 }
 
-pub fn create_category_request_payload(taxonomy: &[String], brief: &str) -> Value {
-    let permitted_categories = taxonomy.join(", ");
+pub fn create_product_selection_request_payload(
+    candidates: &[CatalogProduct],
+    brief: &str,
+) -> Value {
+    let required_count = candidates.len().min(3);
+    let available_dresses = candidates
+        .iter()
+        .map(|product| {
+            json!({
+                "sku": product.sku.as_str(),
+                "brand": product.brand,
+                "product_name": product.product_name,
+                "sizes": product.fixture_sizes,
+                "dress_type": product.fixture_dress_type,
+                "style_tags": product.fixture_style_tags,
+                "price_inr": product.current_price_inr,
+                "delivery_minutes": product.fixture_delivery_minutes,
+                "propensity_score": product.fixture_propensity_score
+            })
+        })
+        .collect::<Vec<_>>();
     json!({
         "model": "gpt-4o",
         "store": false,
         "instructions": format!(
-            "You classify a shopper brief against the runtime inventory taxonomy. \
-             The only permitted category IDs are: [{permitted_categories}]. \
-             Return matched only when the brief calls for exactly one listed category. \
-             Otherwise return not_in_inventory. Never return product IDs, prices, inventory, \
-             scores, or extra fields."
+            "You are a fashion concierge for a dress-only demo store. Interpret the shopper's \
+             words as preferences, including colour, mood, event, silhouette, or style. Select \
+             exactly {required_count} different SKU values from available_dresses, in best-first \
+             order. Never invent a SKU, return a product category, claim no inventory, or add \
+             fields beyond the strict response schema."
         ),
-        "input": brief,
+        "input": {
+            "shopper_brief": brief,
+            "available_dresses": available_dresses
+        },
         "text": {
             "format": {
                 "type": "json_schema",
-                "name": "inventory_category_decision",
+                "name": "available_dress_selection",
                 "strict": true,
                 "schema": {
                     "type": "object",
                     "properties": {
-                        "kind": {
-                            "type": "string",
-                            "enum": ["matched", "not_in_inventory"]
+                        "selected_skus": {
+                            "type": "array",
+                            "items": { "type": "string" }
                         },
-                        "category_id": { "type": ["string", "null"] },
-                        "rationale": { "type": ["string", "null"] },
-                        "acknowledgement": { "type": ["string", "null"] }
+                        "rationale": { "type": "string" }
                     },
-                    "required": ["kind", "category_id", "rationale", "acknowledgement"],
+                    "required": ["selected_skus", "rationale"],
                     "additionalProperties": false
                 }
             }
@@ -111,7 +138,7 @@ pub fn create_category_request_payload(taxonomy: &[String], brief: &str) -> Valu
     })
 }
 
-pub fn parse_openai_category_response(response: &Value) -> Result<CategoryDecision, AppError> {
+pub fn parse_openai_product_selection(response: &Value) -> Result<ProductSelection, AppError> {
     let output_text = extract_openai_response_text(response)?;
     serde_json::from_str(output_text).map_err(|_| AppError::InvalidModelResponse)
 }

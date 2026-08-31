@@ -29,6 +29,7 @@ export class ConciergeApplication {
   private selectedChat: ProductChatContext | null = null;
   private selectedSize = "";
   private cartCount = 0;
+  private cartAdded = false;
   private requestSequence = 0;
   private statusMessage = "";
   private statusTone: "neutral" | "error" | "success" = "neutral";
@@ -70,7 +71,7 @@ export class ConciergeApplication {
           <input id="api-key" name="api-key" type="password" autocomplete="off" spellcheck="false" required placeholder="sk-…" />
           <button class="primary-button" type="submit">Start your edit <span aria-hidden="true">→</span></button>
         </form>
-        <p class="fine-print">v001 uses a small, dress-only demonstration catalogue. No checkout or payment data is collected.</p>
+        <p class="fine-print">v002 uses a small, dress-only demonstration catalogue. No checkout or payment data is collected.</p>
       </section>`;
     this.root.querySelector<HTMLFormElement>("#key-gate")?.addEventListener("submit", (event) => {
       event.preventDefault();
@@ -90,7 +91,7 @@ export class ConciergeApplication {
           <section class="discovery-main" aria-labelledby="edit-title">
             <p class="eyebrow">${isSearch ? "NEW BRIEF" : "YOUR FIRST LOOK"}</p>
             <h1 id="edit-title">${isSearch ? "Tell me what you had in mind." : "A sharper place to start."}</h1>
-            <p class="intro">${isSearch ? "The concierge checks the local v001 category list before it shows anything." : "Three available dresses ranked for this demo edit—then one clear path to something else."}</p>
+            <p class="intro">${isSearch ? "Share a colour, mood, occasion, or style. The concierge selects only from the dresses available right now." : "Three available dresses selected for this demo edit—then one clear path to search again."}</p>
             ${this.renderStatusMessage()}
             ${isSearch || hasAbsence ? this.renderPortfolioSearchForm() : ""}
             ${this.portfolioSearchPending ? '<p class="search-pending" role="status">Finding matching dresses…</p>' : ""}
@@ -98,8 +99,8 @@ export class ConciergeApplication {
             ${productCards.length > 0 ? this.renderProductCardGrid(productCards) : ""}
           </section>
           <aside class="edit-sidebar" aria-label="How this demo works">
-            <p class="eyebrow">THE V001 RULE</p>
-            <p>GPT-4o identifies only the requested category. Embedded catalogue facts and local propensity scores choose the products.</p>
+            <p class="eyebrow">THE V002 RULE</p>
+            <p>GPT-4o chooses only from the available dress cards. Embedded catalogue facts validate every selection, with local propensity ranking as the safe fallback.</p>
             <dl>
               <div><dt>Catalog today</dt><dd>Dresses only</dd></div>
               <div><dt>Delivery fixture</dt><dd>50 min</dd></div>
@@ -156,7 +157,7 @@ export class ConciergeApplication {
     if (this.searchMode === "entry") {
       return `<aside class="fourth-card inventory-terminal" role="status"><span>No more inventory.</span><small>Try another brief above to start a new dress search.</small></aside>`;
     }
-    return `<button class="fourth-card" id="something-else" type="button"><span>I want something else</span><small>Describe the occasion or style</small><b aria-hidden="true">→</b></button>`;
+    return `<button class="fourth-card" id="something-else" type="button"><span>Search another dress</span><small>Describe a colour, mood, occasion, or style</small><b aria-hidden="true">→</b></button>`;
   }
 
   private renderProductCard(card: ProductCard, index: number): string {
@@ -215,7 +216,7 @@ export class ConciergeApplication {
             <section class="cart-composer" aria-label="Choose size and add to cart">
               <label for="selected-size">Choose your size</label>
               <select id="selected-size"><option value="">Select a size</option>${options}</select>
-              <button id="add-cart" class="primary-button" type="button" ${this.selectedSize ? "" : "disabled"}>Add to local cart</button>
+              <button id="add-cart" class="primary-button" type="button" ${this.selectedSize && !this.cartAdded ? "" : "disabled"}>${this.cartAdded ? "Added to local cart" : "Add to local cart"}</button>
               <button id="chat-more" class="quiet-button" type="button">I want something else</button>
             </section>
           </section>
@@ -342,6 +343,7 @@ export class ConciergeApplication {
       const selectedChat = await this.bridge.selectProductChatContext(productSku, selectionSource);
       this.selectedChat = selectedChat;
       this.selectedSize = "";
+      this.cartAdded = false;
       this.detailOpen = false;
       this.statusMessage = "";
       this.chatMessages = [
@@ -366,6 +368,7 @@ export class ConciergeApplication {
     try {
       await this.bridge.updateProductVariantSelection(selectedProduct.sku, selectedSize);
       this.selectedSize = selectedSize;
+      this.cartAdded = false;
       this.statusMessage = "";
     } catch (error) {
       this.selectedSize = "";
@@ -382,6 +385,7 @@ export class ConciergeApplication {
     try {
       const cart = await this.bridge.addValidatedVariantCart(selectedProduct.sku, this.selectedSize);
       this.cartCount = cart.item_count;
+      this.cartAdded = true;
       this.statusTone = "success";
       this.statusMessage = `${selectedProduct.product_name} in ${this.selectedSize} is in your local cart.`;
     } catch (error) {
@@ -473,7 +477,7 @@ export class ConciergeApplication {
       return "Choose a dress first and I’ll keep the edit grounded.";
     }
     const tags = product.fixture_style_tags.join(", ");
-    return `For this v001 edit, lean into ${tags}. The product facts here are fixed demo fixtures; choose a listed size before adding it to your local cart.`;
+    return `For this v002 edit, lean into ${tags}. The product facts here are fixed demo fixtures; choose a listed size before adding it to your local cart.`;
   }
 
   private setShopperError(error: unknown): void {

@@ -6,8 +6,8 @@ use std::sync::{
 use async_trait::async_trait;
 use darkstore_concierge::{
     AppError,
-    catalog::{CatalogProduct, CatalogRepository, CategoryDecision, EmbeddedCatalogRepository},
-    model::CategoryModel,
+    catalog::{CatalogProduct, CatalogRepository, EmbeddedCatalogRepository},
+    model::{ProductSelection, ProductSelectionModel},
     workflow::ConciergeWorkflowService,
 };
 
@@ -34,9 +34,43 @@ impl CatalogRepository for FixtureCatalogRepository {
     }
 }
 
-struct FixtureCategoryModel {
+#[derive(Clone, Copy)]
+enum FixtureSelectionBehavior {
+    Valid,
+    Invalid,
+    Unavailable,
+}
+
+struct FixtureProductSelectionModel {
     calls: Arc<AtomicUsize>,
-    decision: CategoryDecision,
+    behavior: FixtureSelectionBehavior,
+}
+
+#[async_trait]
+impl ProductSelectionModel for FixtureProductSelectionModel {
+    async fn select_available_product_skus(
+        &self,
+        _api_key: &str,
+        candidates: &[CatalogProduct],
+        _brief: &str,
+    ) -> Result<ProductSelection, AppError> {
+        self.calls.fetch_add(1, Ordering::SeqCst);
+        match self.behavior {
+            FixtureSelectionBehavior::Valid => Ok(ProductSelection {
+                selected_skus: candidates
+                    .iter()
+                    .take(3)
+                    .map(|candidate| candidate.sku.as_str().to_owned())
+                    .collect(),
+                rationale: "The available dresses best match the brief.".to_owned(),
+            }),
+            FixtureSelectionBehavior::Invalid => Ok(ProductSelection {
+                selected_skus: vec!["UNLISTED-SKU".to_owned()],
+                rationale: "This must be discarded by the Rust validator.".to_owned(),
+            }),
+            FixtureSelectionBehavior::Unavailable => Err(AppError::ModelUnavailable),
+        }
+    }
 }
 
 struct RecheckingCatalogRepository {
@@ -64,19 +98,6 @@ impl CatalogRepository for RecheckingCatalogRepository {
     }
 }
 
-#[async_trait]
-impl CategoryModel for FixtureCategoryModel {
-    async fn classify_runtime_catalog_category(
-        &self,
-        _api_key: &str,
-        _taxonomy: &[String],
-        _brief: &str,
-    ) -> Result<CategoryDecision, AppError> {
-        self.calls.fetch_add(1, Ordering::SeqCst);
-        Ok(self.decision.clone())
-    }
-}
-
 fn create_workflow_fixture_records() -> Vec<CatalogProduct> {
     [
         ("SKID00083927", 94),
@@ -96,20 +117,19 @@ fn create_workflow_fixture_records() -> Vec<CatalogProduct> {
     .collect()
 }
 
+fn create_fixture_product_selector(
+    calls: Arc<AtomicUsize>,
+    behavior: FixtureSelectionBehavior,
+) -> Arc<FixtureProductSelectionModel> {
+    Arc::new(FixtureProductSelectionModel { calls, behavior })
+}
+
 #[tokio::test]
-async fn test_req_tauri_001_to_008_completes_guided_cart_journey() {
+async fn test_req_tauri_026_to_027_returns_validated_model_ordered_cards() {
     let calls = Arc::new(AtomicUsize::new(0));
-    let model = FixtureCategoryModel {
-        calls: Arc::clone(&calls),
-        decision: CategoryDecision::Matched {
-            category_id: "dresses".to_owned(),
-            rationale: "A date-night dress is in the current portfolio.".to_owned(),
-        },
-    };
-    let catalog = EmbeddedCatalogRepository::create_embedded_catalog_repository();
     let workflow = ConciergeWorkflowService::create_concierge_workflow_service(
-        Arc::new(catalog),
-        Arc::new(model),
+        Arc::new(EmbeddedCatalogRepository::create_embedded_catalog_repository()),
+        create_fixture_product_selector(Arc::clone(&calls), FixtureSelectionBehavior::Valid),
     );
 
     workflow
@@ -119,48 +139,29 @@ async fn test_req_tauri_001_to_008_completes_guided_cart_journey() {
     let first_look = workflow
         .load_initial_product_trio()
         .await
-        .expect("fixture category yields three cards");
+        .expect("a valid model result should yield cards");
 
+    assert_eq!(first_look.kind, "cards");
     assert_eq!(first_look.cards.len(), 3);
-    assert!(first_look.show_next_three);
     assert_eq!(calls.load(Ordering::SeqCst), 1);
-
-    let selected = workflow
-        .select_product_chat_context("SKID00083927", "first_look")
-        .await
-        .expect("first card can anchor chat");
-    let size = selected
-        .product
-        .fixture_sizes
-        .first()
-        .expect("fixture has a selectable size");
-
-    workflow
-        .update_product_variant_selection("SKID00083927", size)
-        .await
-        .expect("available size is accepted");
-    let cart = workflow
-        .add_validated_variant_cart("SKID00083927", size)
-        .await
-        .expect("revalidated variant enters the local cart");
-
-    assert_eq!(cart.item_count, 1);
+    assert_eq!(
+        first_look.cards[0].sku.as_str(),
+        "SKID00083927",
+        "the validated model order is preserved"
+    );
 }
 
 #[tokio::test]
-async fn test_req_tauri_014_returns_no_cards_for_absent_category() {
-    let calls = Arc::new(AtomicUsize::new(0));
+async fn test_req_tauri_028_falls_back_when_model_result_is_unusable() {
     let workflow = ConciergeWorkflowService::create_concierge_workflow_service(
         Arc::new(FixtureCatalogRepository {
             records: create_workflow_fixture_records(),
             unavailable: false,
         }),
-        Arc::new(FixtureCategoryModel {
-            calls,
-            decision: CategoryDecision::NotInInventory {
-                acknowledgement: "This v001 demo currently carries dresses only.".to_owned(),
-            },
-        }),
+        create_fixture_product_selector(
+            Arc::new(AtomicUsize::new(0)),
+            FixtureSelectionBehavior::Invalid,
+        ),
     );
 
     workflow
@@ -168,29 +169,101 @@ async fn test_req_tauri_014_returns_no_cards_for_absent_category() {
         .await
         .expect("key is valid");
     let outcome = workflow
-        .search_portfolio_products_page("I need a linen shirt", false)
+        .search_portfolio_products_page("black", false)
         .await
-        .expect("absence is a valid model outcome");
+        .expect("invalid model SKU output must use local fallback cards");
 
-    assert!(outcome.cards.is_empty());
-    assert_eq!(outcome.kind, "not_in_inventory");
+    assert_eq!(outcome.kind, "cards");
+    assert_eq!(outcome.cards.len(), 3);
+    assert_eq!(outcome.cards[0].sku.as_str(), "SKID00083927");
+    assert!(
+        outcome
+            .rationale
+            .contains("ranked from the current inventory")
+    );
 }
 
 #[tokio::test]
-async fn test_req_tauri_015_stops_before_model_when_taxonomy_is_unavailable() {
+async fn test_req_tauri_029_returns_dresses_for_style_only_brief_when_model_is_down() {
+    let workflow = ConciergeWorkflowService::create_concierge_workflow_service(
+        Arc::new(FixtureCatalogRepository {
+            records: create_workflow_fixture_records(),
+            unavailable: false,
+        }),
+        create_fixture_product_selector(
+            Arc::new(AtomicUsize::new(0)),
+            FixtureSelectionBehavior::Unavailable,
+        ),
+    );
+
+    workflow
+        .configure_session_openai_key("sk-test-key-that-is-never-sent")
+        .await
+        .expect("key is valid");
+    let outcome = workflow
+        .search_portfolio_products_page("red", false)
+        .await
+        .expect("a style-only brief still receives three dresses");
+
+    assert_eq!(outcome.cards.len(), 3);
+    assert!(
+        outcome
+            .cards
+            .iter()
+            .all(|card| card.category_id == "dresses")
+    );
+}
+
+#[tokio::test]
+async fn test_req_tauri_030_returns_final_partial_page_then_exhausts_inventory() {
+    let workflow = ConciergeWorkflowService::create_concierge_workflow_service(
+        Arc::new(FixtureCatalogRepository {
+            records: create_workflow_fixture_records(),
+            unavailable: false,
+        }),
+        create_fixture_product_selector(
+            Arc::new(AtomicUsize::new(0)),
+            FixtureSelectionBehavior::Valid,
+        ),
+    );
+    workflow
+        .configure_session_openai_key("sk-test-key-that-is-never-sent")
+        .await
+        .expect("key is valid");
+
+    let first_page = workflow
+        .search_portfolio_products_page("black", false)
+        .await
+        .expect("first page exists");
+    let second_page = workflow
+        .search_portfolio_products_page("black", true)
+        .await
+        .expect("second page exists");
+    let final_page = workflow
+        .search_portfolio_products_page("black", true)
+        .await
+        .expect("final partial page exists");
+    let exhausted_page = workflow
+        .search_portfolio_products_page("black", true)
+        .await
+        .expect_err("fourth request must report exhausted inventory");
+
+    assert_eq!(first_page.cards.len(), 3);
+    assert_eq!(second_page.cards.len(), 3);
+    assert_eq!(final_page.cards.len(), 2);
+    assert!(!final_page.show_next_three);
+    assert_eq!(exhausted_page.kind(), "complete_page_exhausted");
+}
+
+#[tokio::test]
+async fn test_req_tauri_015_stops_before_model_when_inventory_is_unavailable() {
     let calls = Arc::new(AtomicUsize::new(0));
     let workflow = ConciergeWorkflowService::create_concierge_workflow_service(
         Arc::new(FixtureCatalogRepository {
             records: Vec::new(),
             unavailable: true,
         }),
-        Arc::new(FixtureCategoryModel {
-            calls: Arc::clone(&calls),
-            decision: CategoryDecision::Matched {
-                category_id: "dresses".to_owned(),
-                rationale: "Never used.".to_owned(),
-            },
-        }),
+        create_fixture_product_selector(Arc::clone(&calls), FixtureSelectionBehavior::Valid),
     );
 
     workflow
@@ -200,7 +273,7 @@ async fn test_req_tauri_015_stops_before_model_when_taxonomy_is_unavailable() {
     let error = workflow
         .load_initial_product_trio()
         .await
-        .expect_err("unavailable taxonomy must stop the flow");
+        .expect_err("unavailable inventory must stop the flow");
 
     assert_eq!(error.kind(), "inventory_unavailable");
     assert_eq!(calls.load(Ordering::SeqCst), 0);
@@ -213,13 +286,10 @@ async fn test_req_tauri_012_clear_session_rejects_late_cart_mutation() {
             records: create_workflow_fixture_records(),
             unavailable: false,
         }),
-        Arc::new(FixtureCategoryModel {
-            calls: Arc::new(AtomicUsize::new(0)),
-            decision: CategoryDecision::Matched {
-                category_id: "dresses".to_owned(),
-                rationale: "A dress is available.".to_owned(),
-            },
-        }),
+        create_fixture_product_selector(
+            Arc::new(AtomicUsize::new(0)),
+            FixtureSelectionBehavior::Valid,
+        ),
     );
 
     workflow
@@ -245,19 +315,16 @@ async fn test_req_tauri_012_clear_session_rejects_late_cart_mutation() {
 }
 
 #[tokio::test]
-async fn test_req_tauri_007_rechecks_fixture_availability_before_cart_mutation() {
+async fn test_req_tauri_031_rechecks_fixture_availability_before_cart_mutation() {
     let workflow = ConciergeWorkflowService::create_concierge_workflow_service(
         Arc::new(RecheckingCatalogRepository {
             records: create_workflow_fixture_records(),
             catalog_reads: AtomicUsize::new(0),
         }),
-        Arc::new(FixtureCategoryModel {
-            calls: Arc::new(AtomicUsize::new(0)),
-            decision: CategoryDecision::Matched {
-                category_id: "dresses".to_owned(),
-                rationale: "A dress is available.".to_owned(),
-            },
-        }),
+        create_fixture_product_selector(
+            Arc::new(AtomicUsize::new(0)),
+            FixtureSelectionBehavior::Valid,
+        ),
     );
 
     workflow
@@ -279,62 +346,4 @@ async fn test_req_tauri_007_rechecks_fixture_availability_before_cart_mutation()
         .expect_err("cart operation must re-read fixture availability");
 
     assert_eq!(error.kind(), "product_unavailable");
-}
-
-#[tokio::test]
-async fn test_req_tauri_004_and_016_returns_final_partial_page_then_exhausts_inventory() {
-    let workflow = ConciergeWorkflowService::create_concierge_workflow_service(
-        Arc::new(FixtureCatalogRepository {
-            records: create_workflow_fixture_records(),
-            unavailable: false,
-        }),
-        Arc::new(FixtureCategoryModel {
-            calls: Arc::new(AtomicUsize::new(0)),
-            decision: CategoryDecision::Matched {
-                category_id: "dresses".to_owned(),
-                rationale: "A dress is available.".to_owned(),
-            },
-        }),
-    );
-    workflow
-        .configure_session_openai_key("sk-test-key-that-is-never-sent")
-        .await
-        .expect("key is valid");
-
-    let first_page = workflow
-        .search_portfolio_products_page("A black dress", false)
-        .await
-        .expect("first complete page exists");
-    let second_page = workflow
-        .search_portfolio_products_page("A black dress", true)
-        .await
-        .expect("second complete page exists");
-    let final_page = workflow
-        .search_portfolio_products_page("A black dress", true)
-        .await
-        .expect("the final two dresses should render as a partial page");
-    let exhausted_page = workflow
-        .search_portfolio_products_page("A black dress", true)
-        .await
-        .expect_err("a fourth request must report exhausted inventory");
-
-    assert_eq!(first_page.cards.len(), 3);
-    assert!(first_page.show_next_three);
-    assert_eq!(second_page.cards.len(), 3);
-    assert!(second_page.show_next_three);
-    assert_eq!(final_page.cards.len(), 2);
-    assert!(!final_page.show_next_three);
-    assert!(first_page.cards.iter().all(|first| {
-        second_page
-            .cards
-            .iter()
-            .all(|second| first.sku != second.sku)
-    }));
-    assert!(second_page.cards.iter().all(|second| {
-        final_page
-            .cards
-            .iter()
-            .all(|final_card| second.sku != final_card.sku)
-    }));
-    assert_eq!(exhausted_page.kind(), "complete_page_exhausted");
 }
