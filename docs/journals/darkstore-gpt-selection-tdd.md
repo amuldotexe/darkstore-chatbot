@@ -2,7 +2,7 @@
 
 - Task: GPT-selected dress recommendations and universal signed DMG
 - Created: 2026-08-30 16:27:46Z
-- Updated: 2026-08-31 02:08:01Z
+- Updated: 2026-08-31 02:13:18Z
 - Current Phase: Refactor
 - Status: active
 
@@ -168,3 +168,27 @@ Make the clean universal DMG path require an Apple-notarized release rather than
 
 #### Performance/Metrics:
 - Final DMG SHA-256: 66890fcc3510d62ac82080e098b80b074eb9ee3ae95deeef87b9209107cea5bc; spctl source=Notarized Developer ID.
+
+### Session: 2026-08-31 02:13:18Z
+
+#### Current Phase: Refactor
+
+#### Tests Written:
+- github_release_asset_audit: passing - Downloaded the public GitHub release asset, verified its SHA-256, simulated quarantine, verified the disk image and staple, passed Gatekeeper, and checked nested app signing and both CPU slices.
+
+#### Implementation Progress:
+- GitHub Release v0.2.0: published public DMG asset linked to commit b4dea3a64d672e6b9300bc38581d9f7582b241ae.
+
+#### Current Focus:
+Audit the public GitHub delivery path for the exact Apple-notarized universal v0.2.0 DMG.
+
+#### Next Steps:
+- Share the public v0.2.0 release URL with testers using macOS 11 or later.
+- Have an external tester download directly from GitHub and exercise their own OpenAI API key.
+- Use APPLE_NOTARY_KEYCHAIN_PROFILE for every future distributable build.
+
+#### Context Notes:
+- Rubber-duck conclusion: the download/install trust chain is verified; runtime recommendations still require the recipient to provide a valid OpenAI key and have network access.
+
+#### Performance/Metrics:
+- GitHub asset size 10,274,679 bytes and sha256 66890fcc3510d62ac82080e098b80b074eb9ee3ae95deeef87b9209107cea5bc; GitHub release asset reports the same digest.
