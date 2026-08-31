@@ -2,6 +2,8 @@
 
 A desktop demo for choosing and customising a dress from a small dark-store catalogue.
 
+![Darkstore Concierge first screen](image.png)
+
 [Download v0.2.0 for macOS](https://github.com/amuldotexe/darkstore-chatbot/releases/download/v0.2.0/Darkstore-Concierge-v002-universal.dmg) — universal, signed, and Apple-notarized.
 
 ## Run

@@ -40,7 +40,7 @@ Prove the release catalogue works without Turso launch-shell configuration
 
 #### Implementation Progress:
 - `portfolioBrief` now survives result-page re-renders and is reset only when a shopper begins a new brief
-- `E2E-test001` includes visually inspected screenshots of key gate, first look, product details, chat, cart, first and second search pages, and absent-category recovery
+- `docs/e2e-test001` includes visually inspected screenshots of key gate, first look, product details, chat, cart, first and second search pages, and absent-category recovery
 
 #### Current Focus:
 Completed fresh frontend, Rust, Tauri-build, and DMG integrity gates against the final source state
@@ -88,7 +88,7 @@ Verify the actual bundled catalogue can replace remote inventory at the composit
 - REQ-TAURI-001 through 008 frontend journey: passing - copy contract now states embedded catalogue facts
 
 #### Implementation Progress:
-- Release composition uses embedded data; E2E-test001 contains a non-production screenshot harness and evidence manifest
+- Release composition uses embedded data; `docs/e2e-test001` contains a non-production screenshot harness and evidence manifest
 
 #### Current Focus:
 Exercise and visually inspect every safe shopper transition, then package the DMG

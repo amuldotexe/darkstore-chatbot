@@ -1,13 +1,13 @@
-import "../src/styles.css";
+import "../../src/styles.css";
 
-import { createConciergeApplication } from "../src/app";
+import { createConciergeApplication } from "../../src/app";
 import type {
   CartSnapshot,
   ConciergeBridge,
   ProductCard,
   ProductChatContext,
   RecommendationOutcome,
-} from "../src/contracts";
+} from "../../src/contracts";
 
 const fixtureCards: ProductCard[] = [
   {
