@@ -2,7 +2,7 @@
 
 - Task: GPT-selected dress recommendations and universal signed DMG
 - Created: 2026-08-30 16:27:46Z
-- Updated: 2026-08-30 17:00:24Z
+- Updated: 2026-08-31 02:08:01Z
 - Current Phase: Refactor
 - Status: active
 
@@ -142,3 +142,29 @@ Fresh universal Developer ID-signed v002 DMG built and verified
 
 #### Performance/Metrics:
 - (none recorded)
+
+### Session: 2026-08-31 02:08:01Z
+
+#### Current Phase: Refactor
+
+#### Tests Written:
+- test_build_dmg_cleanup: passing - Checks the clean script declares a Keychain-backed notary profile, Apple submission, stapling, and explicit local-only opt-out.
+- build_clean_dmg_v001 end-to-end: passing - Cleared release outputs, rebuilt universal arm64+x86_64 app, signed, submitted, stapled, and passed Gatekeeper.
+
+#### Implementation Progress:
+- scripts/build_clean_dmg_v001.sh: requires APPLE_NOTARY_KEYCHAIN_PROFILE for distributable builds; submits and staples the final DMG after signature verification.
+- README.md: documents Keychain-only notarization setup and explicit non-distributable local opt-out.
+
+#### Current Focus:
+Make the clean universal DMG path require an Apple-notarized release rather than allowing a stale or merely signed distribution.
+
+#### Next Steps:
+- Share the verified DMG at the recorded release path.
+- Keep the App Store Connect .p8 outside the repository; replace or revoke it from Apple if it is ever exposed.
+- Commit the release-script documentation change when requested.
+
+#### Context Notes:
+- Apple accepted submission 00b86766-c0f7-47f9-a802-41116a9c9e29; API credentials are stored in macOS Keychain profile darkstore-notary-v002, not in source control.
+
+#### Performance/Metrics:
+- Final DMG SHA-256: 66890fcc3510d62ac82080e098b80b074eb9ee3ae95deeef87b9209107cea5bc; spctl source=Notarized Developer ID.

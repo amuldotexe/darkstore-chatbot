@@ -26,6 +26,18 @@ if ! rg -q 'codesign --verify --deep --strict' "$project_directory/scripts/build
   exit 1
 fi
 
+if ! rg -q 'APPLE_NOTARY_KEYCHAIN_PROFILE' "$project_directory/scripts/build_clean_dmg_v001.sh" \
+  || ! rg -q 'notarytool submit' "$project_directory/scripts/build_clean_dmg_v001.sh" \
+  || ! rg -q 'stapler staple' "$project_directory/scripts/build_clean_dmg_v001.sh"; then
+  printf 'Expected the shareable DMG build to require Keychain-backed Apple notarization and staple its ticket.\n' >&2
+  exit 1
+fi
+
+if ! rg -q 'ALLOW_UNNOTARIZED_LOCAL_BUILD' "$project_directory/scripts/build_clean_dmg_v001.sh"; then
+  printf 'Expected local-only builds to require an explicit unnotarized opt-out.\n' >&2
+  exit 1
+fi
+
 if rg -q -- '--no-sign' "$project_directory/scripts/build_clean_dmg_v001.sh"; then
   printf 'DMG build must not opt out of signing.\n' >&2
   exit 1

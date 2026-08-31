@@ -27,6 +27,23 @@ find_developer_id_identity() {
     | head -n 1
 }
 
+notarize_release_dmg() {
+  local keychain_profile="${APPLE_NOTARY_KEYCHAIN_PROFILE:-}"
+
+  if [[ -z "$keychain_profile" ]]; then
+    printf 'A notarized release requires APPLE_NOTARY_KEYCHAIN_PROFILE. Set it to a local notarytool Keychain profile.\n' >&2
+    printf 'For an explicitly local-only artifact, set ALLOW_UNNOTARIZED_LOCAL_BUILD=1. Do not distribute that artifact.\n' >&2
+    return 1
+  fi
+
+  xcrun notarytool submit "$output_dmg" \
+    --keychain-profile "$keychain_profile" \
+    --wait
+  xcrun stapler staple "$output_dmg"
+  xcrun stapler validate "$output_dmg"
+  spctl --assess --type open --context context:primary-signature --verbose=4 "$output_dmg"
+}
+
 if [[ "${1:-}" == "--clean-only" ]]; then
   clean_release_bundle "${2:?Expected a bundle directory after --clean-only}"
   exit 0
@@ -81,7 +98,18 @@ if [[ "$binary_architectures" != *"arm64"* || "$binary_architectures" != *"x86_6
   exit 1
 fi
 if ! spctl --assess --type execute --verbose=2 "$mounted_app"; then
-  printf 'Note: Developer ID signature is present, but Gatekeeper approval requires successful Apple notarization.\n' >&2
+  printf 'The mounted app has a valid Developer ID signature; the DMG itself will be assessed after notarization.\n' >&2
 fi
+hdiutil detach "$mount_directory" -quiet
+rmdir "$mount_directory"
+trap - EXIT
+
+if [[ "${ALLOW_UNNOTARIZED_LOCAL_BUILD:-0}" == "1" ]]; then
+  printf 'Skipping Apple notarization for an explicit local-only build. Do not distribute this DMG.\n' >&2
+else
+  notarize_release_dmg
+fi
+
+hdiutil verify "$output_dmg"
 LC_ALL=C LANG=C shasum -a 256 "$output_dmg"
 printf 'Fresh DMG: %s\n' "$output_dmg"
